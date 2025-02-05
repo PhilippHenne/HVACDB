@@ -10,6 +10,85 @@
 <body>
     <h1>HVAC Device Database</h1>
 
+    <section id="add-device-section">
+        <h2>Add New Device</h2>
+        <form id="addDeviceForm">
+            <div class="form-group">
+                <label for="manufacturer">Manufacturer:</label>
+                <input type="text" id="manufacturer" name="manufacturer" required>
+            </div>
+            <div class="form-group">
+                <label for="market_entry_year">Market Entry Year:</label>
+                <input type="number" id="market_entry_year" name="market_entry_year" required>
+            </div>
+            <div class="form-group">
+                <label for="device_type">Device Type:</label>
+                <input type="text" id="device_type" name="device_type" required>
+            </div>
+            <div class="form-group">
+                <label for="power_rating_kw">Power Rating (kW):</label>
+                <input type="number" step="any" id="power_rating_kw" name="power_rating_kw" required>
+            </div>
+            <div class="form-group">
+                <label for="airflow_volume_m3h">Airflow Volume (m³/h):</label>
+                <input type="number" step="any" id="airflow_volume_m3h" name="airflow_volume_m3h" required>
+            </div>
+
+            <div class="form-group">
+                <label for="eer">EER:</label>
+                <input type="number" step="any" id="eer" name="eer">
+            </div>
+            <div class="form-group">
+                <label for="seer">SEER:</label>
+                <input type="number" step="any" id="seer" name="seer">
+            </div>
+            <div class="form-group">
+                <label for="sepr">SEPR:</label>
+                <input type="number" step="any" id="sepr" name="sepr">
+            </div>
+            <div class="form-group">
+                <label for="heat_recovery_rate">Heat Recovery Rate:</label>
+                <input type="number" step="any" id="heat_recovery_rate" name="heat_recovery_rate">
+            </div>
+            <div class="form-group">
+                <label for="fan_performance">Fan Performance:</label>
+                <input type="number" step="any" id="fan_performance" name="fan_performance">
+            </div>
+            <div class="form-group">
+                <label for="temperature_range">Temperature Range:</label>
+                <input type="text" id="temperature_range" name="temperature_range">
+            </div>
+            <div class="form-group">
+                <label for="noise_level_dba">Noise Level (dB(A)):</label>
+                <input type="number" step="any" id="noise_level_dba" name="noise_level_dba">
+            </div>
+            <div class="form-group">
+                <label for="price_currency">Price Currency:</label>
+                <input type="text" id="price_currency" name="price_currency">
+            </div>
+            <div class="form-group">
+                <label for="price_amount">Price Amount:</label>
+                <input type="number" step="any" id="price_amount" name="price_amount">
+            </div>
+            <div class="form-group">
+                <label for="units_sold_year">Units Sold Year:</label>
+                <input type="number" id="units_sold_year" name="units_sold_year">
+            </div>
+            <div class="form-group">
+                <label for="units_sold_count">Units Sold Count:</label>
+                <input type="number" id="units_sold_count" name="units_sold_count">
+            </div>
+            <div class="form-group">
+                <label for="data_source">Data Source:</label>
+                <input type="text" id="data_source" name="data_source">
+            </div>
+
+            <button type="submit">Add Device</button>
+        </form>
+        <div id="addDeviceStatus"></div>
+    </section>
+
+    <!-- CSV Upload Section (keep it) -->
     <section id="csv-upload-section">
         <h2>Upload CSV</h2>
         <input type="file" id="csvFile" accept=".csv">
@@ -17,6 +96,7 @@
         <div id="uploadStatus"></div>
     </section>
 
+    <!-- Data Display Section (keep it) -->
     <section id="data-display-section">
         <h2>Devices</h2>
         <ul id="deviceList">
@@ -27,5 +107,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
-    

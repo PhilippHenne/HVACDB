@@ -57,5 +57,42 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    const addDeviceForm = document.getElementById('addDeviceForm');
+    const addDeviceStatus = document.getElementById('addDeviceStatus');
+
+    addDeviceForm.addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent default form submission
+
+        const formData = new FormData(addDeviceForm);
+        const deviceData = {};
+        formData.forEach((value, key) => {
+            deviceData[key] = value;
+        });
+
+        fetch('/api/devices', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(deviceData),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (response.ok && response.status === 201) {
+                addDeviceStatus.textContent = 'Device added successfully!';
+                addDeviceStatus.style.color = 'green';
+                addDeviceForm.reset(); // Clear the form
+                loadDevices(); // Reload device list to show the new device
+            } else {
+                addDeviceStatus.textContent = 'Error adding device: ' + data.message + (data.error ? ` Error: ${data.error}` : '');
+                addDeviceStatus.style.color = 'red';
+            }
+        })
+        .catch(error => {
+            addDeviceStatus.textContent = 'Error adding device: ' + error;
+            addDeviceStatus.style.color = 'red';
+        });
+    });
+
     loadDevices(); // Load devices on page load
 });
