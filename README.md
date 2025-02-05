@@ -48,5 +48,3 @@ This project aims to build a database for collecting data on HVAC devices to ana
 * Example delete request:
   ```curl
   curl -X DELETE http://127.0.0.1:5000/api/devices/1
-
-    
