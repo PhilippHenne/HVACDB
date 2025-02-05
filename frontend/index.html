@@ -1,0 +1,31 @@
+      
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HVAC Device Database</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>HVAC Device Database</h1>
+
+    <section id="csv-upload-section">
+        <h2>Upload CSV</h2>
+        <input type="file" id="csvFile" accept=".csv">
+        <button id="uploadButton">Upload CSV</button>
+        <div id="uploadStatus"></div>
+    </section>
+
+    <section id="data-display-section">
+        <h2>Devices</h2>
+        <ul id="deviceList">
+            <!-- Device list will be loaded here by JavaScript -->
+        </ul>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
+    

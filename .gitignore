@@ -1,0 +1,24 @@
+      
+# Python
+*.pyc
+*~
+__pycache__/
+.venv/
+venv/
+env/
+*.egg-info
+.DS_Store
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+
+# Database
+*.sqlite
+*.db
+
+# Logs and temp files
+*.log
+tmp/
+temp/

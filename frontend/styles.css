@@ -1,0 +1,23 @@
+body {
+    font-family: sans-serif;
+    margin: 20px;
+}
+
+#csv-upload-section, #data-display-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+ul#deviceList {
+    list-style-type: none;
+    padding: 0;
+}
+
+ul#deviceList li {
+    margin-bottom: 5px;
+    padding: 8px;
+    border: 1px solid #eee;
+    border-radius: 3px;
+}
