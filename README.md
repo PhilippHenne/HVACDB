@@ -30,7 +30,8 @@ This project aims to build a database for collecting data on HVAC devices to ana
 **3. Using the DB:**
 * Use curl to interact with the local DB
 * Example create request:
-  ```curl -X POST -H "Content-Type: application/json" -d '{
+  ```curl
+  curl -X POST -H "Content-Type: application/json" -d '{
     "manufacturer": "Test Manufacturer",
     "market_entry_year": 2023,
     "device_type": "Split AC",
@@ -39,11 +40,13 @@ This project aims to build a database for collecting data on HVAC devices to ana
     "eer": 3.2
   }' http://127.0.0.1:5000/api/devices
 * Example update request:
-  ```curl -X PUT -H "Content-Type: application/json" -d '{
+  ```curl
+  curl -X PUT -H "Content-Type: application/json" -d '{
     "eer": 3.5,
     "noise_level_dba": 50
   }' http://127.0.0.1:5000/api/devices/1
 * Example delete request:
-  ```curl -X DELETE http://127.0.0.1:5000/api/devices/1
+  ```curl
+curl -X DELETE http://127.0.0.1:5000/api/devices/1
 
     
