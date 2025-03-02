@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %} - Home{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">HVAC Efficiency Database</h1>
+    <p class="lead">Analyze HVAC devices for their energy efficiency and track development over the past decade.</p>
+    <hr class="my-4">
+    <p>This database helps predict future developments and assess potential for energy efficiency improvements in HVAC systems.</p>
+    
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Add a Device</h5>
+                    <p class="card-text">Manually add a new HVAC device to the database.</p>
+                    <a href="{{ url_for('main.add_device') }}" class="btn btn-primary">Add Device</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Upload CSV</h5>
+                    <p class="card-text">Bulk import HVAC device data from a CSV file.</p>
+                    <a href="{{ url_for('main.upload_csv') }}" class="btn btn-primary">Upload CSV</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Search Devices</h5>
+                    <p class="card-text">Search for specific HVAC devices in the database.</p>
+                    <a href="{{ url_for('main.search') }}" class="btn btn-primary">Search</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

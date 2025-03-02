@@ -8,6 +8,7 @@ venv/
 env/
 *.egg-info
 .DS_Store
+.env
 
 # Node
 node_modules/

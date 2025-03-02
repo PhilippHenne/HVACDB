@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %} - Add Device{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Add HVAC Device</h2>
+        <form method="POST" action="{{ url_for('main.add_device') }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        {{ form.manufacturer.label(class="form-label") }}
+                        {{ form.manufacturer(class="form-control") }}
+                        {% for error in form.manufacturer.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        {{ form.market_entry_year.label(class="form-label") }}
+                        {{ form.market_entry_year(class="form-control") }}
+                        {% for error in form.market_entry_year.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        {{ form.device_type.label(class="form-label") }}
+                        {{ form.device_type(class="form-control") }}
+                        {% for error in form.device_type.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.power_rating_kw.label(class="form-label") }}
+                        {{ form.power_rating_kw(class="form-control") }}
+                        {% for error in form.power_rating_kw.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.airflow_volume_m3h.label(class="form-label") }}
+                        {{ form.airflow_volume_m3h(class="form-control") }}
+                        {% for error in form.airflow_volume_m3h.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        {{ form.eer.label(class="form-label") }}
+                        {{ form.eer(class="form-control") }}
+                        {% for error in form.eer.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        {{ form.seer.label(class="form-label") }}
+                        {{ form.seer(class="form-control") }}
+                        {% for error in form.seer.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        {{ form.sepr.label(class="form-label") }}
+                        {{ form.sepr(class="form-control") }}
+                        {% for error in form.sepr.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.heat_recovery_rate.label(class="form-label") }}
+                        {{ form.heat_recovery_rate(class="form-control") }}
+                        {% for error in form.heat_recovery_rate.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.fan_performance.label(class="form-label") }}
+                        {{ form.fan_performance(class="form-control") }}
+                        {% for error in form.fan_performance.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.temperature_range.label(class="form-label") }}
+                        {{ form.temperature_range(class="form-control") }}
+                        {% for error in form.temperature_range.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.noise_level_dba.label(class="form-label") }}
+                        {{ form.noise_level_dba(class="form-control") }}
+                        {% for error in form.noise_level_dba.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        {{ form.price_currency.label(class="form-label") }}
+                        {{ form.price_currency(class="form-control") }}
+                        {% for error in form.price_currency.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        {{ form.price_amount.label(class="form-label") }}
+                        {{ form.price_amount(class="form-control") }}
+                        {% for error in form.price_amount.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        {{ form.units_sold_year.label(class="form-label") }}
+                        {{ form.units_sold_year(class="form-control") }}
+                        {% for error in form.units_sold_year.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        {{ form.units_sold_count.label(class="form-label") }}
+                        {{ form.units_sold_count(class="form-control") }}
+                        {% for error in form.units_sold_count.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        {{ form.data_source.label(class="form-label") }}
+                        {{ form.data_source(class="form-control") }}
+                        {% for error in form.data_source.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
