@@ -21,9 +21,9 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        {{ form.market_entry_year.label(class="form-label") }}
-                        {{ form.market_entry_year(class="form-control") }}
-                        {% for error in form.market_entry_year.errors %}
+                        {{ form.market_entry.label(class="form-label") }}
+                        {{ form.market_entry(class="form-control") }}
+                        {% for error in form.market_entry.errors %}
                             <span class="text-danger">{{ error }}</span>
                         {% endfor %}
                     </div>
@@ -183,6 +183,21 @@
                 </div>
             </div>
             
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        {{ form.custom_fields.label(class="form-label") }}
+                        {{ form.custom_fields(class="form-control", rows=3, placeholder='e.g., {"color": "white", "feature": "Wi-Fi"}') }}
+                        {% if form.custom_fields.description %}
+                            <small class="form-text text-muted">{{ form.custom_fields.description }}</small>
+                        {% endif %}
+                        {% for error in form.custom_fields.errors %}
+                            <span class="text-danger d-block">{{ error }}</span> {# Use d-block for better spacing #}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
             <div class="form-group">
                 {{ form.submit(class="btn btn-primary") }}
                 <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Cancel</a>

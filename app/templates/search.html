@@ -37,27 +37,54 @@
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <div class="form-group">
-                                {{ form.min_efficiency.label(class="form-label") }}
-                                {{ form.min_efficiency(class="form-control", placeholder="Minimum EER value") }}
-                                {% for error in form.min_efficiency.errors %}
+                                {{ form.fields_to_display.label(class="form-label") }}
+                                {{ form.fields_to_display(class="form-control", placeholder="Select Standard Fields to Display") }}
+                                {% for error in form.fields_to_display.errors %}
                                     <span class="text-danger">{{ error }}</span>
                                 {% endfor %}
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                {{ form.min_year.label(class="form-label") }}
-                                {{ form.min_year(class="form-control", placeholder="From year") }}
-                                {% for error in form.min_year.errors %}
+                                {{ form.custom_field_to_display.label(class="form-label") }}
+                                {{ form.custom_field_to_display(class="form-control", placeholder="Also Display Custom Field (Enter Key)") }}
+                                {% for error in form.custom_field_to_display.errors %}
                                     <span class="text-danger">{{ error }}</span>
                                 {% endfor %}
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                {{ form.max_year.label(class="form-label") }}
-                                {{ form.max_year(class="form-control", placeholder="To year") }}
-                                {% for error in form.max_year.errors %}
+                                {{ form.filter_field.label(class="form-label") }}
+                                {{ form.filter_field(class="form-control", placeholder="Filter by Field") }}
+                                {% for error in form.filter_field.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                {{ form.custom_filter_field.label(class="form-label") }}
+                                {{ form.custom_filter_field(class="form-control", placeholder="Custom Filter Field Key") }}
+                                {% for error in form.custom_filter_field.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                {{ form.filter_value.label(class="form-label") }}
+                                {{ form.filter_value(class="form-control", placeholder="Filter Value") }}
+                                {% for error in form.filter_value.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                {{ form.group_by_field.label(class="form-label") }}
+                                {{ form.group_by_field(class="form-control", placeholder="Group Results By") }}
+                                {% for error in form.group_by_field.errors %}
                                     <span class="text-danger">{{ error }}</span>
                                 {% endfor %}
                             </div>
@@ -72,47 +99,67 @@
             </div>
         </div>
         
-        {% if results %}
-            <h3>Search Results ({{ results|length }} found)</h3>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Manufacturer</th>
-                            <th>Type</th>
-                            <th>Year</th>
-                            <th>Power (kW)</th>
-                            <th>EER</th>
-                            <th>SEER</th>
-                            <th>Price</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for device in results %}
-                            <tr>
-                                <td>{{ device.id }}</td>
-                                <td>{{ device.manufacturer }}</td>
-                                <td>{{ device.device_type }}</td>
-                                <td>{{ device.market_entry_year }}</td>
-                                <td>{{ device.power_rating_kw }}</td>
-                                <td>{{ device.eer or '-' }}</td>
-                                <td>{{ device.seer or '-' }}</td>
-                                <td>
-                                    {% if device.price_amount and device.price_currency %}
-                                        {{ device.price_currency }} {{ device.price_amount }}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% elif request.method == 'POST' %}
-            <div class="alert alert-info">No devices found matching your search criteria.</div>
+        {% if query_executed and results %}
+        {# Add this link/button - Constructing the URL correctly is key #}
+        {# This simple example passes GET args; handling POST form data requires JS or hidden form fields #}
+        <div class="mb-3">
+            {# Generate the URL dynamically based on current search params #}
+            {# NOTE: This requires passing search params correctly from the route #}
+            {#       and might need JS for complex forms or POST requests #}
+            <a href="{{ export_url }}" class="btn btn-secondary btn-sm">
+                Download Results as CSV
+            </a>
+        </div>
+    
+        {# ... Your results table rendering logic ... #}
+        {# Remember to add the conditional logic for is_grouped here #}
+        {% if is_grouped %}
+            <h4>Grouped Results</h4>
+            <table class="table table-striped table-hover">
+                 <thead>
+                     <tr>
+                         {# Use selected_columns which now contains (key, header_name) tuples #}
+                         {% for key, header_name in selected_columns %}
+                             <th>{{ header_name }}</th>
+                         {% endfor %}
+                     </tr>
+                 </thead>
+                 <tbody>
+                     {% for row in results %}
+                     <tr>
+                          {% for key, header_name in selected_columns %}
+                             <td>{{ row.get(key, '') }}</td> {# Use .get() for safety #}
+                          {% endfor %}
+                     </tr>
+                     {% endfor %}
+                 </tbody>
+            </table>
+        {% else %}
+            <h4>Detailed Results</h4>
+            <table class="table table-striped table-hover table-responsive"> {# Added table-responsive #}
+                 <thead>
+                     <tr>
+                         {% for key, header_name in selected_columns %}
+                             <th>{{ header_name }}</th>
+                         {% endfor %}
+                     </tr>
+                 </thead>
+                 <tbody>
+                     {% for row in results %}
+                     <tr>
+                          {% for key, header_name in selected_columns %}
+                             <td>{{ row.get(key, '') }}</td> {# Use .get() for safety #}
+                          {% endfor %}
+                     </tr>
+                     {% endfor %}
+                 </tbody>
+            </table>
         {% endif %}
+    
+    
+    {% elif query_executed %}
+        <div class="alert alert-info">No devices found matching your criteria.</div>
+    {% endif %}
     </div>
 </div>
 {% endblock %}

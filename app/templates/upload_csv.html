@@ -37,14 +37,14 @@
                 <h5 class="card-title">Required Columns</h5>
                 <ul>
                     <li>manufacturer</li>
-                    <li>market_entry_year</li>
+                    <li>market_entry</li>
                     <li>device_type</li>
                     <li>power_rating_kw</li>
-                    <li>airflow_volume_m3h</li>
                 </ul>
                 
                 <h5 class="card-title">Optional Columns</h5>
                 <ul>
+                    <li>airflow_volume_m3h</li>
                     <li>eer</li>
                     <li>seer</li>
                     <li>sepr</li>
@@ -72,7 +72,7 @@
         e.preventDefault();
         
         // Create sample CSV content
-        const csvContent = `manufacturer,market_entry_year,device_type,power_rating_kw,airflow_volume_m3h,eer,seer,sepr,heat_recovery_rate,fan_performance,temperature_range,noise_level_dba,price_currency,price_amount,units_sold_year,units_sold_count,data_source
+        const csvContent = `manufacturer,market_entry,device_type,power_rating_kw,airflow_volume_m3h,eer,seer,sepr,heat_recovery_rate,fan_performance,temperature_range,noise_level_dba,price_currency,price_amount,units_sold_year,units_sold_count,data_source
 Carrier,2020,Heat Pump,5.5,1200,3.6,18.5,3.2,95,92,"10-32",45,USD,3500,2020,1250,Manufacturer
 Daikin,2019,AC Unit,3.2,850,3.8,17.2,3.0,92,88,"15-35",42,EUR,2800,2019,2100,Industry Report
 Trane,2021,Ventilation,2.8,1500,3.5,16.8,3.1,90,91,"12-30",47,USD,4200,2021,980,Survey Data`;

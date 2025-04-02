@@ -17,3 +17,5 @@ This project aims to build a database for collecting data on HVAC devices to ana
 * **pip:** Python package installer (usually comes with Python).
 * **PostgreSQL:** Install PostgreSQL on your system. You'll need to create a database and user for this project.
 * **Virtual Environment (Recommended):** It's highly recommended to use a virtual environment to manage Python dependencies.
+
+

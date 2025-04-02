@@ -22,6 +22,7 @@
                         <th>SEER</th>
                         <th>SEPR</th>
                         <th>Price</th>
+                        <th>Custom Fields</th> {# New Header #}
                     </tr>
                 </thead>
                 <tbody>
@@ -30,7 +31,7 @@
                             <td>{{ device.id }}</td>
                             <td>{{ device.manufacturer }}</td>
                             <td>{{ device.device_type }}</td>
-                            <td>{{ device.market_entry_year }}</td>
+                            <td>{{ device.market_entry }}</td>
                             <td>{{ device.power_rating_kw }}</td>
                             <td>{{ device.airflow_volume_m3h }}</td>
                             <td>{{ device.eer or '-' }}</td>
@@ -39,6 +40,13 @@
                             <td>
                                 {% if device.price_amount and device.price_currency %}
                                     {{ device.price_currency }} {{ device.price_amount }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if device.custom_fields %}
+                                    <pre style="font-size: 0.8em; white-space: pre-wrap; word-break: break-all;">{{ device.custom_fields | tojson(indent=2) }}</pre>
                                 {% else %}
                                     -
                                 {% endif %}
