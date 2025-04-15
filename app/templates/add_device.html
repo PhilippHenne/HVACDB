@@ -12,6 +12,15 @@
             <div class="row mb-3">
                 <div class="col-md-4">
                     <div class="form-group">
+                        {{ form.device_type.label(class="form-label") }}
+                        {{ form.device_type(class="form-control") }}
+                        {% for error in form.device_type.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
                         {{ form.manufacturer.label(class="form-label") }}
                         {{ form.manufacturer(class="form-control") }}
                         {% for error in form.manufacturer.errors %}

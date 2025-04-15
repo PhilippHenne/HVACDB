@@ -21,6 +21,7 @@ def create_app(config_class=Config):
     
     # Create database tables if they don't exist
     with app.app_context():
+        print(Config.SQLALCHEMY_DATABASE_URI)
         db.create_all()
     
     return app

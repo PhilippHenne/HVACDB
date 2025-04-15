@@ -45,7 +45,7 @@ def extract_nested_json_columns(input_csv, output_csv=None, columns_to_extract=N
     
     # If columns to extract not specified, try to detect
     if columns_to_extract is None:
-        columns_to_extract = ['organisation', 'heatingCharacteristics', 'coolingCharacteristics', 'contactDetails']
+        columns_to_extract = ['organisation', 'contactDetails']
     
     # Process each specified column
     for col in columns_to_extract:
@@ -80,11 +80,11 @@ def extract_nested_json_columns(input_csv, output_csv=None, columns_to_extract=N
 
 def main():
     # Example usage
-    input_csv = 'airconditioners_1.csv'  # Your input CSV file
-    output_csv = 'airconditioners_1_expanded.csv'  # Optional output file path
+    input_csv = 'residentialventilationunits.csv'  # Your input CSV file
+    output_csv = 'residentialventilationunits_expanded.csv'  # Optional output file path
     
     # Specific columns to extract (optional)
-    columns_to_extract = ['organisation', 'heatingCharacteristics', 'coolingCharacteristics', 'contactDetails']
+    columns_to_extract = ['organisation', 'contactDetails']
     
     expanded_df = extract_nested_json_columns(input_csv, output_csv, columns_to_extract)
 

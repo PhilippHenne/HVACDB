@@ -3,8 +3,8 @@ import pandas as pd
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, current_app, Response
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, and_, extract, func, cast, String, Numeric, Date
-from .models import db, HVACDevice
-from .forms import HVACDeviceForm, CSVUploadForm, SearchForm
+from .models import db, HVACDevice, AirConditioner, HeatPump, ResidentialVentilationUnit, MODEL_MAP
+from .forms import HVACDeviceForm, CSVUploadForm, SearchForm, DEVICE_TYPE_CHOICES
 from .utils import allowed_file, process_csv
 import json 
 import csv
@@ -18,11 +18,6 @@ VALID_STANDARD_FIELDS = {
     'manufacturer': HVACDevice.manufacturer,
     'device_type': HVACDevice.device_type,
     'market_entry': HVACDevice.market_entry,
-    'power_rating_kw': HVACDevice.power_rating_kw,
-    'airflow_volume_m3h': HVACDevice.airflow_volume_m3h,
-    'eer': HVACDevice.eer,
-    'seer': HVACDevice.seer,
-    'sepr': HVACDevice.sepr,
     'noise_level_dba': HVACDevice.noise_level_dba,
     'price_amount': HVACDevice.price_amount,
     'price_currency': HVACDevice.price_currency,
@@ -42,7 +37,6 @@ STANDARD_FIELDS = [
     ('device_type', 'Device Type'),
     ('market_entry', 'Market Entry Date'),
     ('power_rating_kw', 'Power Rating (kW)'),
-    ('airflow_volume_m3h', 'Airflow Volume (m³/h)'),
     ('eer', 'EER'),
     ('seer', 'SEER'),
     ('sepr', 'SEPR'),
@@ -201,98 +195,125 @@ def index():
 
 @main.route('/add_device', methods=['GET', 'POST'])
 def add_device():
-    """Add a new HVAC device manually"""
     form = HVACDeviceForm()
-
     if form.validate_on_submit():
-        # Process custom fields
+        selected_type = form.device_type.data
+        ModelClass = MODEL_MAP.get(selected_type) # Get the correct model class
+
+        if not ModelClass:
+            flash(f"Invalid device type selected: {selected_type}", "danger")
+            return render_template('add_device.html', form=form)
+
+        # Prepare data - common fields + specific fields based on type
+        # This needs careful mapping from form fields to model fields
+        common_data = {
+            'manufacturer': form.manufacturer.data,
+            'market_entry': form.market_entry.data,
+            'noise_level_dba': form.noise_level_dba.data,
+            'price_currency': form.price_currency.data,
+            'price_amount': form.price_amount.data,
+            'data_source': form.data_source.data,
+            'device_type': selected_type, # Set the discriminator
+        }
+        # Add specific fields - needs checks based on 'selected_type'
+        specific_data = {}
+        print(selected_type)
+        if selected_type == 'air_conditioner':
+            specific_data['eer'] = form.eer.data
+            specific_data['seer'] = form.seer.data
+            specific_data['rated_power_cooling_kw'] = form.rated_power_cooling_kw.data
+            specific_data['energy_class_cooling'] = form.energy_class_cooling.data
+            specific_data['design_load_cooling_kw'] = form.design_load_cooling_kw.data
+            specific_data['annual_consumption_cooling_kwh'] = form.annual_consumption_cooling_kwh.data
+            specific_data['rated_power_heating_kw'] = form.rated_power_heating_kw.data
+            specific_data['cop_standard'] = form.cop_standard.data
+            specific_data['scop_average'] = form.scop_average.data
+            specific_data['energy_class_heating_average'] = form.energy_class_heating_average.data
+            specific_data['design_load_heating_average_kw'] = form.design_load_heating_average_kw.data
+            specific_data['annual_consumption_heating_average_kwh'] = form.annual_consumption_heating_average_kwh.data
+            specific_data['scop_warm'] = form.scop_warm.data
+            specific_data['energy_class_heating_warm'] = form.energy_class_heating_warm.data
+            specific_data['design_load_heating_warm_kw'] = form.design_load_heating_warm_kw.data
+            specific_data['scop_cold'] = form.scop_cold.data
+            specific_data['energy_class_heating_cold'] = form.energy_class_heating_cold.data
+            specific_data['design_load_heating_cold_kw'] = form.design_load_heating_cold_kw.data
+            specific_data['refrigerant_type'] = form.refrigerant_type.data
+            specific_data['refrigerant_gwp'] = form.refrigerant_gwp.data
+            specific_data['noise_level_outdoor_cooling_db'] = form.noise_level_outdoor_cooling_db.data
+        elif selected_type == 'heat_pump':
+             specific_data['sepr'] = form.sepr.data
+        elif selected_type == 'residential_ventilation_unit':
+             specific_data['heat_recovery_rate'] = form.heat_recovery_rate.data
+             specific_data['fan_performance'] = form.fan_performance.data
+        # ... add others
+
+        # Handle custom_fields JSON
         custom_data = None
         if form.custom_fields.data:
-            try:
-                custom_data = json.loads(form.custom_fields.data)
-                if not isinstance(custom_data, dict):
-                     flash('Custom fields must be a valid JSON object (key-value pairs).', 'warning')
-                     # Decide if you want to reject or just ignore invalid format
-                     custom_data = None # Or render form again with error
-            except json.JSONDecodeError:
-                flash('Invalid JSON format in Custom Fields. Please correct it.', 'danger')
-                # Re-render the form with the error
-                return render_template('add_device.html', form=form)
+            try: custom_data = json.loads(form.custom_fields.data)
+            except json.JSONDecodeError: flash('Invalid JSON in Custom Fields.', 'warning')
 
-        device = HVACDevice(
-            manufacturer=form.manufacturer.data,
-            market_entry=form.market_entry.data,
-            device_type=form.device_type.data,
-            power_rating_kw=form.power_rating_kw.data,
-            airflow_volume_m3h=form.airflow_volume_m3h.data,
-            eer=form.eer.data,
-            seer=form.seer.data,
-            sepr=form.sepr.data,
-            heat_recovery_rate=form.heat_recovery_rate.data,
-            fan_performance=form.fan_performance.data,
-            temperature_range=form.temperature_range.data,
-            noise_level_dba=form.noise_level_dba.data,
-            price_currency=form.price_currency.data,
-            price_amount=form.price_amount.data,
-            units_sold_year=form.units_sold_year.data,
-            units_sold_count=form.units_sold_count.data,
-            data_source=form.data_source.data,
-            custom_fields=custom_data
-        )
-
-        db.session.add(device)
-        db.session.commit()
-
-        flash('HVAC device added successfully!', 'success')
-        return redirect(url_for('main.devices'))
-    elif request.method == 'POST':
-         # Handle potential JSON validation errors if validate_json was added to the form
-         pass # Error messages should be displayed by WTForms
+        # Instantiate the correct subclass
+        try:
+            device = ModelClass(**common_data, **specific_data, custom_fields=custom_data)
+            db.session.add(device)
+            db.session.commit()
+            flash(f'{ModelClass.__name__} added successfully!', 'success')
+            # Redirect to a general devices view or type-specific view?
+            return redirect(url_for('main.devices')) # devices view needs update too
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error adding device: {e}", "danger")
+            print(f"Add device error: {e}")
 
     return render_template('add_device.html', form=form)
 
 
 @main.route('/upload_csv', methods=['GET', 'POST'])
 def upload_csv():
-    """Upload and process a CSV file"""
     form = CSVUploadForm()
-    
     if form.validate_on_submit():
         file = form.file.data
-        
+        selected_type = form.device_type.data # Get type for the whole file
+
+        if selected_type not in MODEL_MAP:
+             flash(f"Invalid device type selected for CSV: {selected_type}", "danger")
+             return render_template('upload_csv.html', form=form)
+
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
+            # Consider adding user/session ID to filename if multiple users upload
             file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
-            
-            # Process the CSV file
-            success, message = process_csv(file_path)
-            
-            # Remove the file after processing
-            os.remove(file_path)
-            
-            if success:
-                flash(message, 'success')
-                return redirect(url_for('main.devices'))
-            else:
-                flash(message, 'danger')
-                
+            try:
+                file.save(file_path)
+                # Process the CSV file, passing the selected device type string
+                success, message = process_csv(file_path, selected_type)
+                if success: flash(message, 'success')
+                else: flash(message, 'danger')
+            except Exception as e:
+                 flash(f"Error processing file: {e}", "danger")
+                 print(f"File processing error: {e}")
+            finally:
+                 # Ensure file is removed even if processing fails
+                 if os.path.exists(file_path):
+                     os.remove(file_path)
+
+            # Redirect to devices view (needs update)
+            return redirect(url_for('main.devices'))
+
     return render_template('upload_csv.html', form=form)
 
 
 @main.route('/devices')
 def devices():
-    """View all HVAC devices"""
     page = request.args.get('page', 1, type=int)
     per_page = 20
-    
-    # Get all devices with pagination
+    # Query the base class - SQLAlchemy fetches appropriate subclass data too
     pagination = HVACDevice.query.order_by(HVACDevice.id.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
-    
-    devices = pagination.items
-    
+    devices = pagination.items # This list now contains instances of AC, HeatPump etc.
+    # The template needs to handle potentially different fields via device.to_dict()
     return render_template('devices.html', devices=devices, pagination=pagination)
 
 

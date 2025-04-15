@@ -1,9 +1,14 @@
 # app/forms.py
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms import StringField, IntegerField, FloatField, SubmitField, SelectField, SelectMultipleField, TextAreaField, DateField
-from wtforms.validators import DataRequired, Optional, NumberRange, ValidationError
-import json # To validate JSON input
+from wtforms import StringField, IntegerField, FloatField, SubmitField, SelectField, TextAreaField, SelectMultipleField
+from wtforms.fields import DateField
+from wtforms.validators import DataRequired, Optional, NumberRange, ValidationError, InputRequired
+import json
+from .models import DEVICE_TYPES
+
+
+DEVICE_TYPE_CHOICES = [ (k, v) for k, v in DEVICE_TYPES.items() ]
 
 # Custom validator for JSON
 def validate_json(form, field):
@@ -13,45 +18,80 @@ def validate_json(form, field):
         except json.JSONDecodeError:
             raise ValidationError('Invalid JSON format in custom fields.')
 
+
 class HVACDeviceForm(FlaskForm):
+    device_type = SelectField('Device Type', choices=[('', '-- Select Type --')] + DEVICE_TYPE_CHOICES, validators=[InputRequired()])
     manufacturer = StringField('Manufacturer', validators=[DataRequired()])
     market_entry = DateField('Market Entry Date', format='%Y-%m-%d', validators=[DataRequired()])
-    device_type = StringField('Device Type', validators=[DataRequired()])
-    power_rating_kw = FloatField('Power Rating (kW)', validators=[Optional()])
-    airflow_volume_m3h = FloatField('Airflow Volume (m³/h)', validators=[Optional()])
-    eer = FloatField('Energy Efficiency Ratio (EER)', validators=[Optional()])
-    seer = FloatField('Seasonal Energy Efficiency Ratio (SEER)', validators=[Optional()])
-    sepr = FloatField('Seasonal Energy Performance Ratio (SEPR)', validators=[Optional()])
-    heat_recovery_rate = FloatField('Heat Recovery Rate (%)', validators=[Optional()])
-    fan_performance = FloatField('Fan Performance', validators=[Optional()])
-    temperature_range = StringField('Temperature Range', validators=[Optional()])
+    market_exit = DateField('Market Exit Date (Optional)', format='%Y-%m-%d', validators=[Optional()])
+    #power_rating_kw = FloatField('Power Rating (kW)', validators=[DataRequired()])
+    #airflow_volume_m3h = FloatField('Airflow Volume (m³/h)', validators=[DataOptional()])
     noise_level_dba = FloatField('Noise Level (dBA)', validators=[Optional()])
-    price_currency = SelectField('Currency', choices=[('USD', 'USD'), ('EUR', 'EUR'), ('GBP', 'GBP'), ('JPY', 'JPY')], validators=[Optional()])
+    price_currency = SelectField('Currency', choices=[('', '--'), ('USD', 'USD'), ('EUR', 'EUR'), ('GBP', 'GBP'), ('JPY', 'JPY')], validators=[Optional()])
     price_amount = FloatField('Price Amount', validators=[Optional()])
-    units_sold_year = IntegerField('Units Sold Year', validators=[Optional()])
-    units_sold_count = IntegerField('Units Sold Count', validators=[Optional()])
     data_source = StringField('Data Source', validators=[Optional()])
+    custom_fields = TextAreaField('Other Custom Fields (JSON format)', validators=[Optional()])
 
-    # Add TextArea for custom fields (e.g., JSON format)
-    custom_fields = TextAreaField('Custom Fields (JSON format)',
-                                  description='Enter additional fields as a JSON object, e.g., {"certification": "Energy Star", "warranty_years": 5}',
-                                  validators=[Optional()]) # Add validate_json if strict validation is needed immediately: , validate_json
+    # Example for AC
+    eer = FloatField('EER', validators=[Optional()])
+    seer = FloatField('SEER', validators=[Optional()])
+    rated_power_cooling_kw = FloatField('Rated Power Cooling (kw)', validators=[Optional()])
+    energy_class_cooling = StringField('Energy Class Cooling', validators=[Optional()])
+    design_load_cooling_kw = FloatField('Design Load Cooling (kw)', validators=[Optional()])
+    annual_consumption_cooling_kwh = FloatField('Annual Consumption Cooling (kw/h)', validators=[Optional()])
+    rated_power_heating_kw = FloatField('Rated Power Heating (kw)', validators=[Optional()])
+    cop_standard = FloatField('COP Standard', validators=[Optional()])
+    scop_average = FloatField('SCOP Average', validators=[Optional()])
+    energy_class_heating_average = StringField('Energy Class Heating avg', validators=[Optional()])
+    design_load_heating_average_kw = FloatField('Design Load Heating avg (kw)', validators=[Optional()])
+    annual_consumption_heating_average_kwh = FloatField('Annual consumption heating avg (kw)', validators=[Optional()])
+    scop_warm = FloatField('SCOP Warm', validators=[Optional()])
+    energy_class_heating_warm = StringField('Energy Class Heating Warm', validators=[Optional()])
+    design_load_heating_warm_kw = FloatField('Design Load Heating Warm (kw)', validators=[Optional()])
+    scop_cold = FloatField('SCOP Cold', validators=[Optional()])
+    energy_class_heating_cold = StringField('Energy Class Heating Cold', validators=[Optional()])
+    design_load_heating_cold_kw = FloatField('Design Load Heating Cold (kw)', validators=[Optional()])
+    refrigerant_type = StringField('Refrigerant Type', validators=[Optional()])
+    refrigerant_gwp = IntegerField('Refrigerant GWP', validators=[Optional()])
+    noise_level_outdoor_cooling_db = FloatField('Noise Level Outdoor Cooling (db)', validators=[Optional()])
+    # Example for HeatPump
+    sepr = FloatField('SEPR', validators=[Optional()])
+    # Example for residential ventilation units
+    maximumflowrate = FloatField('Maximum Flow Rate (m³/h) (Ventilator Only)', validators=[Optional()])
+    specificpowerinput = FloatField('Specific Power Input (W/(m³/h)) (Ventilator Only)', validators=[Optional()])
+    thermalefficiencyheatrecovery = FloatField('Heat Recovery Thermal Efficiency (%) (Ventilator Only)', validators=[Optional()])
+    referenceflowrate = FloatField('Reference Flow Rate', validators=[Optional()])
+    referencepressuredifference = FloatField('Reference Pressure Difference', validators=[Optional()])
+    typology = StringField('Typology', validators=[Optional()])
+    heatrecoverysystem = StringField('Heat Recovery System', validators=[Optional()])
+    fandrivepowerinput = FloatField('Fan Drive Power Input', validators=[Optional()])
+    drivetype = StringField('Drive Type', validators=[Optional()])
+    ductedunit = StringField('Ducted Unit', validators=[Optional()])
+    controltypology = StringField('Control Typology', validators=[Optional()])
+    specificenergyconsumptionwarm = FloatField('Specific Energy Consumption Warm', validators=[Optional()])
+    specificenergyconsumptionaverage = FloatField('Specific Energy Consumption Average', validators=[Optional()])
+    specificenergyconsumptioncold = FloatField('Specific Energy Consumption Cold', validators=[Optional()])
+    annualheatingsavedaverageclimate = FloatField('Annual Heating Saved Average Climate', validators=[Optional()])
+    energyclass = StringField('Energy Class (Ventilator Only)', validators=[Optional()])
+    maximuminternalleakagerate = FloatField('Maximum Internal Leakage Rate', validators=[Optional()])
+    maximumexternalleakagerate = FloatField('Maximum External Leakage Rate', validators=[Optional()])
 
     submit = SubmitField('Add HVAC Device')
 
+
 class CSVUploadForm(FlaskForm):
+    # Add device type selection for the whole CSV file
+    device_type = SelectField('Device Type for this CSV', choices=[('', '-- Select Type --')] + DEVICE_TYPE_CHOICES, validators=[InputRequired()])
     file = FileField('CSV File', validators=[
         FileRequired(),
         FileAllowed(['csv'], 'CSV files only!')
     ])
     submit = SubmitField('Upload CSV')
 
-
 STANDARD_FIELDS = [
     ('manufacturer', 'Manufacturer'),
     ('device_type', 'Device Type'),
     ('market_entry', 'Market Entry Date'),
-    ('power_rating_kw', 'Power Rating (kW)'),
     ('airflow_volume_m3h', 'Airflow Volume (m³/h)'),
     ('eer', 'EER'),
     ('seer', 'SEER'),
@@ -72,9 +112,9 @@ GROUPING_FIELDS = [
 
 class SearchForm(FlaskForm):
     # Keep existing simple filters
-    manufacturer = StringField('Filter by Manufacturer', validators=[Optional()], render_kw={"placeholder": "Enter manufacturer name"})
-    device_type = StringField('Filter by Device Type', validators=[Optional()], render_kw={"placeholder": "Enter device type"})
-
+    manufacturer = StringField('Filter by Manufacturer', validators=[Optional()])
+    device_type = SelectField('Filter by Device Type', choices=[('', 'Any')] + DEVICE_TYPE_CHOICES, validators=[Optional()]) # Filter by type
+    
     # --- New Fields for Display ---
     fields_to_display = SelectMultipleField(
         'Select Standard Fields to Display',

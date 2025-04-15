@@ -1,3 +1,5 @@
+{# app/templates/upload_csv.html - Add this section for device type #}
+
 {% extends 'base.html' %}
 
 {% block title %} - Upload CSV{% endblock %}
@@ -7,67 +9,110 @@
     <div class="col-md-8">
         <h2>Upload CSV File</h2>
         <p class="lead">Upload a CSV file containing HVAC device data for bulk import.</p>
-        
+
         <form method="POST" action="{{ url_for('main.upload_csv') }}" enctype="multipart/form-data">
             {{ form.hidden_tag() }}
-            
+
+            {# *** Add Device Type Selection *** #}
             <div class="mb-3">
                 <div class="form-group">
-                    {{ form.file.label(class="form-label") }}
-                    {{ form.file(class="form-control") }}
-                    {% for error in form.file.errors %}
-                        <span class="text-danger">{{ error }}</span>
+                    {{ form.device_type.label(class="form-label") }} <span class="text-danger">*</span> {# Mark as required #}
+                    {{ form.device_type(class="form-select" + (" is-invalid" if form.device_type.errors else "")) }}
+                    {% for error in form.device_type.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                     <small class="form-text text-muted">Select the type of device contained in this CSV file.</small>
+                </div>
+            </div>
+            {# ******************************* #}
+
+            <div class="mb-3">
+                <div class="form-group">
+                    {{ form.file.label(class="form-label") }} <span class="text-danger">*</span> {# Mark as required #}
+                    {{ form.file(class="form-control" + (" is-invalid" if form.file.errors else "")) }}
+                     {% for error in form.file.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
                     {% endfor %}
                 </div>
             </div>
-            
+
             <div class="form-group">
                 {{ form.submit(class="btn btn-primary") }}
                 <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>
-    
+
+    {# Keep the instructions column, but update it #}
     <div class="col-md-4">
         <div class="card mt-4">
             <div class="card-header">
-                CSV Format Instructions
+                CSV Format Instructions (Example for Air Conditioner)
             </div>
             <div class="card-body">
-                <h5 class="card-title">Required Columns</h5>
+                <p>Select the correct 'Device Type' above first.</p>
+                <h5 class="card-title">Required Common Columns</h5>
                 <ul>
+                    {# Update list based on final common fields #}
                     <li>manufacturer</li>
-                    <li>market_entry</li>
-                    <li>device_type</li>
-                    <li>power_rating_kw</li>
+                    <li>market_entry (YYYY-MM-DD)</li>
                 </ul>
-                
-                <h5 class="card-title">Optional Columns</h5>
+
+                <h5 class="card-title">Required Air Conditioner Columns</h5>
                 <ul>
-                    <li>airflow_volume_m3h</li>
-                    <li>eer</li>
-                    <li>seer</li>
-                    <li>sepr</li>
-                    <li>heat_recovery_rate</li>
-                    <li>fan_performance</li>
-                    <li>temperature_range</li>
+                    {# Add required AC specific fields if any #}
+                    <li><em>(None defined as strictly required yet)</em></li>
+                </ul>
+
+
+                <h5 class="card-title">Optional Common Columns</h5>
+                 <ul>
                     <li>noise_level_dba</li>
                     <li>price_currency</li>
                     <li>price_amount</li>
-                    <li>units_sold_year</li>
-                    <li>units_sold_count</li>
                     <li>data_source</li>
+                    <li><em>(Any other common fields)</em></li>
                 </ul>
-                
-                <a href="#" class="btn btn-outline-secondary btn-sm" id="download-sample">Download Sample CSV</a>
+
+                 <h5 class="card-title">Optional Air Conditioner Columns</h5>
+                <ul>
+                    <li>eer</li>
+                    <li>seer</li>
+                    <li>rated_power_cooling_kw</li>
+                    <li>energy_class_cooling</li>
+                    <li>design_load_cooling_kw</li>
+                    <li>annual_consumption_cooling_kwh</li>
+                    <li>rated_power_heating_kw</li>
+                    <li>cop_standard</li>
+                    <li>scop_average</li>
+                    <li>energy_class_heating_average</li>
+                    <li>design_load_heating_average_kw</li>
+                    <li>annual_consumption_heating_average_kwh</li>
+                    <li>scop_warm</li>
+                    <li>energy_class_heating_warm</li>
+                    <li>design_load_heating_warm_kw</li>
+                    <li>scop_cold</li>
+                    <li>energy_class_heating_cold</li>
+                    <li>design_load_heating_cold_kw</li>
+                    <li>refrigerant_type</li>
+                    <li>refrigerant_gwp</li>
+                    <li>noise_level_outdoor_cooling_db</li>
+                </ul>
+
+                 <h5 class="card-title">Other Custom Fields</h5>
+                 <p>Any other columns in the CSV will be imported into the 'custom_fields' JSON storage if they are not standard/specific fields for the selected device type.</p>
+
+                {# Sample CSV generation JS needs significant update or removal #}
+                {# <a href="#" class="btn btn-outline-secondary btn-sm" id="download-sample">Download Sample CSV</a> #}
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
+{# Remove or update the sample CSV script if it exists #}
 {% block scripts %}
-<script>
+{# <script>
     document.getElementById('download-sample').addEventListener('click', function(e) {
         e.preventDefault();
         
@@ -88,5 +133,5 @@ Trane,2021,Ventilation,2.8,1500,3.5,16.8,3.1,90,91,"12-30",47,USD,4200,2021,980,
         a.click();
         document.body.removeChild(a);
     });
-</script>
+</script> #}
 {% endblock %}
