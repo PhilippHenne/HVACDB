@@ -17,6 +17,7 @@ main = Blueprint('main', __name__)
 VALID_STANDARD_FIELDS = {
     'manufacturer': HVACDevice.manufacturer,
     'device_type': HVACDevice.device_type,
+    'model_identifier': HVACDevice.device_type,
     'market_entry': HVACDevice.market_entry,
     'noise_level_dba': HVACDevice.noise_level_dba,
     'price_amount': HVACDevice.price_amount,
@@ -35,6 +36,7 @@ GROUPING_FIELDS = [
 STANDARD_FIELDS = [
     ('manufacturer', 'Manufacturer'),
     ('device_type', 'Device Type'),
+    ('model_identifier', 'Model Identifier'),
     ('market_entry', 'Market Entry Date'),
     ('power_rating_kw', 'Power Rating (kW)'),
     ('eer', 'EER'),
@@ -209,6 +211,7 @@ def add_device():
         common_data = {
             'manufacturer': form.manufacturer.data,
             'market_entry': form.market_entry.data,
+            'model_identifier': form.model_identifier,
             'noise_level_dba': form.noise_level_dba.data,
             'price_currency': form.price_currency.data,
             'price_amount': form.price_amount.data,

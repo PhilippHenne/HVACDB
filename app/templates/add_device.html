@@ -30,6 +30,15 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
+                        {{ form.model_identifier.label(class="form-label") }}
+                        {{ form.model_identifier(class="form-control") }}
+                        {% for error in form.model_identifier.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
                         {{ form.market_entry.label(class="form-label") }}
                         {{ form.market_entry(class="form-control") }}
                         {% for error in form.market_entry.errors %}

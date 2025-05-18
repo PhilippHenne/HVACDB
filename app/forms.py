@@ -22,17 +22,15 @@ def validate_json(form, field):
 class HVACDeviceForm(FlaskForm):
     device_type = SelectField('Device Type', choices=[('', '-- Select Type --')] + DEVICE_TYPE_CHOICES, validators=[InputRequired()])
     manufacturer = StringField('Manufacturer', validators=[DataRequired()])
-    market_entry = DateField('Market Entry Date', format='%Y-%m-%d', validators=[DataRequired()])
+    model_identifier = StringField('Model Identifier', validators=[DataRequired()])
+    market_entry = DateField('Market Entry Date', format='%Y-%m-%d', validators=[Optional()])
     market_exit = DateField('Market Exit Date (Optional)', format='%Y-%m-%d', validators=[Optional()])
-    #power_rating_kw = FloatField('Power Rating (kW)', validators=[DataRequired()])
-    #airflow_volume_m3h = FloatField('Airflow Volume (m³/h)', validators=[DataOptional()])
     noise_level_dba = FloatField('Noise Level (dBA)', validators=[Optional()])
     price_currency = SelectField('Currency', choices=[('', '--'), ('USD', 'USD'), ('EUR', 'EUR'), ('GBP', 'GBP'), ('JPY', 'JPY')], validators=[Optional()])
     price_amount = FloatField('Price Amount', validators=[Optional()])
     data_source = StringField('Data Source', validators=[Optional()])
     custom_fields = TextAreaField('Other Custom Fields (JSON format)', validators=[Optional()])
 
-    # Example for AC
     eer = FloatField('EER', validators=[Optional()])
     seer = FloatField('SEER', validators=[Optional()])
     rated_power_cooling_kw = FloatField('Rated Power Cooling (kw)', validators=[Optional()])
@@ -54,9 +52,6 @@ class HVACDeviceForm(FlaskForm):
     refrigerant_type = StringField('Refrigerant Type', validators=[Optional()])
     refrigerant_gwp = IntegerField('Refrigerant GWP', validators=[Optional()])
     noise_level_outdoor_cooling_db = FloatField('Noise Level Outdoor Cooling (db)', validators=[Optional()])
-    # Example for HeatPump
-    sepr = FloatField('SEPR', validators=[Optional()])
-    # Example for residential ventilation units
     maximumflowrate = FloatField('Maximum Flow Rate (m³/h) (Ventilator Only)', validators=[Optional()])
     specificpowerinput = FloatField('Specific Power Input (W/(m³/h)) (Ventilator Only)', validators=[Optional()])
     thermalefficiencyheatrecovery = FloatField('Heat Recovery Thermal Efficiency (%) (Ventilator Only)', validators=[Optional()])
@@ -72,6 +67,8 @@ class HVACDeviceForm(FlaskForm):
     specificenergyconsumptionaverage = FloatField('Specific Energy Consumption Average', validators=[Optional()])
     specificenergyconsumptioncold = FloatField('Specific Energy Consumption Cold', validators=[Optional()])
     annualheatingsavedaverageclimate = FloatField('Annual Heating Saved Average Climate', validators=[Optional()])
+    annualheatingsavedwarmclimate = FloatField('Annual Heating Saved Warm Climate', validators=[Optional()])
+    annualheatingsavedcoldclimate = FloatField('Annual Heating Saved Cold Climate', validators=[Optional()])
     energyclass = StringField('Energy Class (Ventilator Only)', validators=[Optional()])
     maximuminternalleakagerate = FloatField('Maximum Internal Leakage Rate', validators=[Optional()])
     maximumexternalleakagerate = FloatField('Maximum External Leakage Rate', validators=[Optional()])
@@ -91,6 +88,7 @@ class CSVUploadForm(FlaskForm):
 STANDARD_FIELDS = [
     ('manufacturer', 'Manufacturer'),
     ('device_type', 'Device Type'),
+    ('model_identifier', 'Model Identifier'),
     ('market_entry', 'Market Entry Date'),
     ('airflow_volume_m3h', 'Airflow Volume (m³/h)'),
     ('eer', 'EER'),
@@ -103,10 +101,10 @@ STANDARD_FIELDS = [
 
 # Fields suitable for grouping
 GROUPING_FIELDS = [
-    ('', '-- Select Field --'), # Default empty choice
+    ('', '-- Select Field --'),
     ('manufacturer', 'Manufacturer'),
     ('device_type', 'Device Type'),
-    ('market_entry', 'Market Entry'), # We'll extract year in backend
+    ('market_entry', 'Market Entry'),
     ('price_currency', 'Price Currency'),
 ]
 
