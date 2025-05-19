@@ -12,15 +12,21 @@
             background-color: #f8f9fa;
         }
         body {
-            padding-top: 20px;
+            padding-top: 20px; /* Adjust if navbar is fixed, but for static navbar this is fine */
             padding-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .main-container { /* Renamed from .container to avoid conflict with Bootstrap's .container */
+            flex: 1; /* Allows main content to grow and push footer down */
         }
     </style>
     {% block styles %}{% endblock %}
 </head>
 <body>
-    <div class="container">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <div class="container main-container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 rounded">
             <div class="container-fluid">
                 <a class="navbar-brand" href="{{ url_for('main.index') }}">HVAC Efficiency DB</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,10 +44,10 @@
                             <a class="nav-link" href="{{ url_for('main.upload_csv') }}">Upload CSV</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.devices') }}">View Devices</a>
+                            <a class="nav-link" href="{{ url_for('main.search') }}">Search & View</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.search') }}">Search</a>
+                            <a class="nav-link" href="{{ url_for('main.tco_calculator') }}">TCO Calculator</a>
                         </li>
                     </ul>
                 </div>
@@ -51,21 +57,28 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
         
+        {# Content block is now outside the Bootstrap .container of the nav, but likely within a new .container or .main-content div #}
+        {# The structure you had: <div class="content"> {% block content %}{% endblock %} </div> #}
+        {# Let's assume .content is styled appropriately or we use Bootstrap containers in child templates #}
         <div class="content">
             {% block content %}{% endblock %}
         </div>
         
-        <footer class="footer">
-            <div class="container text-center">
-                <span class="text-muted">HVAC Efficiency Database &copy; {{ now.year }}</span>
-            </div>
-        </footer>
-    </div>
+    </div> {# End of main .container #}
+
+    <footer class="footer mt-auto py-3 bg-light"> {# Bootstrap sticky footer classes #}
+        <div class="container text-center">
+            <span class="text-muted">HVAC Efficiency Database &copy; {{ now.year }}</span>
+        </div>
+    </footer>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     {% block scripts %}{% endblock %}

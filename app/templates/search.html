@@ -1,165 +1,331 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %} - Search Devices{% endblock %}
+{% block title %} - Search HVAC Devices{% endblock %}
+
+{% block styles %}
+    <style>
+        /* ... (keep your existing search.html specific styles from previous version, or adapt Bootstrap) ... */
+        .form-section { 
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            border-radius: .25rem;
+        }
+        .form-section h3 { 
+            margin-top: 0; 
+            border-bottom: 1px solid #ced4da; 
+            padding-bottom: 10px; 
+            margin-bottom:15px;
+            font-size: 1.25rem;
+        }
+        .metric-search-group { /* New class for the metric search container */
+            padding-left: 15px;
+            border-left: 3px solid #0d6efd;
+            margin-bottom: 10px;
+        }
+        .export-link { 
+            display: inline-block; 
+            margin: 15px 0; 
+        }
+        .description-text { 
+            font-size: 0.875em;
+            color: #6c757d;
+            margin-top: .25rem;
+        }
+        .pagination { 
+            margin-top: 20px; 
+            justify-content: center;
+        }
+         /* Ensure select multiple takes up height */
+        #fields_to_display_select {
+            min-height: 150px; /* Adjust as needed */
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <h2>Search HVAC Devices</h2>
-        <p class="lead">Filter the database to find specific devices</p>
-        
-        <div class="card mb-4">
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('main.search') }}">
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                {{ form.manufacturer.label(class="form-label") }}
-                                {{ form.manufacturer(class="form-control", placeholder="Enter manufacturer name") }}
-                                {% for error in form.manufacturer.errors %}
-                                    <span class="text-danger">{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                {{ form.device_type.label(class="form-label") }}
-                                {{ form.device_type(class="form-control", placeholder="Enter device type") }}
-                                {% for error in form.device_type.errors %}
-                                    <span class="text-danger">{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                {{ form.fields_to_display.label(class="form-label") }}
-                                {{ form.fields_to_display(class="form-control", placeholder="Select Standard Fields to Display") }}
-                                {% for error in form.fields_to_display.errors %}
-                                    <span class="text-danger">{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                {{ form.custom_field_to_display.label(class="form-label") }}
-                                {{ form.custom_field_to_display(class="form-control", placeholder="Also Display Custom Field (Enter Key)") }}
-                                {% for error in form.custom_field_to_display.errors %}
-                                    <span class="text-danger">{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                {{ form.filter_field.label(class="form-label") }}
-                                {{ form.filter_field(class="form-control", placeholder="Filter by Field") }}
-                                {% for error in form.filter_field.errors %}
-                                    <span class="text-danger">{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                {{ form.custom_filter_field.label(class="form-label") }}
-                                {{ form.custom_filter_field(class="form-control", placeholder="Custom Filter Field Key") }}
-                                {% for error in form.custom_filter_field.errors %}
-                                    <span class="text-danger">{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                {{ form.filter_value.label(class="form-label") }}
-                                {{ form.filter_value(class="form-control", placeholder="Filter Value") }}
-                                {% for error in form.filter_value.errors %}
-                                    <span class="text-danger">{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                {{ form.group_by_field.label(class="form-label") }}
-                                {{ form.group_by_field(class="form-control", placeholder="Group Results By") }}
-                                {% for error in form.group_by_field.errors %}
-                                    <span class="text-danger">{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        {{ form.submit(class="btn btn-primary") }}
-                        <a href="{{ url_for('main.search') }}" class="btn btn-secondary">Reset</a>
-                    </div>
-                </form>
+    <div class="pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Search HVAC Devices</h1>
+    </div>
+
+    <form method="POST" action="{{ url_for('main.search') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="form-section">
+            <h3>Basic Filters</h3>
+            <div class="mb-3">
+                {{ form.manufacturer.label(class="form-label") }}
+                {{ form.manufacturer(class="form-control") }}
+                {% if form.manufacturer.errors %}{% for error in form.manufacturer.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+            </div>
+            <div class="mb-3">
+                {{ form.device_type.label(class="form-label") }}
+                {{ form.device_type(class="form-select", id="device_type_select") }}
+                {% if form.device_type.errors %}{% for error in form.device_type.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+            </div>
+            <div class="mb-3">
+                {{ form.id_or_model_identifier.label(class="form-label") }}
+                {{ form.id_or_model_identifier(class="form-control") }}
+                {% if form.id_or_model_identifier.errors %}{% for error in form.id_or_model_identifier.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
             </div>
         </div>
-        
-        {% if query_executed and results %}
-        {# Add this link/button - Constructing the URL correctly is key #}
-        {# This simple example passes GET args; handling POST form data requires JS or hidden form fields #}
-        <div class="mb-3">
-            {# Generate the URL dynamically based on current search params #}
-            {# NOTE: This requires passing search params correctly from the route #}
-            {#       and might need JS for complex forms or POST requests #}
-            <a href="{{ export_url }}" class="btn btn-secondary btn-sm">
-                Download Results as CSV
-            </a>
+
+        {# --- NEW Unified Core Metric Filters --- #}
+        <div class="form-section">
+            <h3>Core Metric Filter</h3>
+            <div class="metric-search-group">
+                <div class="row">
+                    <div class="col-md-5 mb-3">
+                        {{ form.search_metric_name.label(class="form-label") }}
+                        {{ form.search_metric_name(class="form-select", id="search_metric_name_select") }}
+                        {% if form.search_metric_name.errors %}{% for error in form.search_metric_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.search_metric_operator.label(class="form-label") }}
+                        {{ form.search_metric_operator(class="form-select", id="search_metric_operator_select") }}
+                        {% if form.search_metric_operator.errors %}{% for error in form.search_metric_operator.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.search_metric_value.label(class="form-label") }}
+                        {{ form.search_metric_value(class="form-control", id="search_metric_value_input") }}
+                        {% if form.search_metric_value.errors %}{% for error in form.search_metric_value.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
-    
-        {# ... Your results table rendering logic ... #}
-        {# Remember to add the conditional logic for is_grouped here #}
-        {% if is_grouped %}
-            <h4>Grouped Results</h4>
-            <table class="table table-striped table-hover">
-                 <thead>
-                     <tr>
-                         {# Use selected_columns which now contains (key, header_name) tuples #}
-                         {% for key, header_name in selected_columns %}
-                             <th>{{ header_name }}</th>
-                         {% endfor %}
-                     </tr>
-                 </thead>
-                 <tbody>
-                     {% for row in results %}
-                     <tr>
-                          {% for key, header_name in selected_columns %}
-                             <td>{{ row.get(key, '') }}</td> {# Use .get() for safety #}
-                          {% endfor %}
-                     </tr>
-                     {% endfor %}
-                 </tbody>
-            </table>
-        {% else %}
-            <h4>Detailed Results</h4>
-            <table class="table table-striped table-hover table-responsive"> {# Added table-responsive #}
-                 <thead>
-                     <tr>
-                         {% for key, header_name in selected_columns %}
-                             <th>{{ header_name }}</th>
-                         {% endfor %}
-                     </tr>
-                 </thead>
-                 <tbody>
-                     {% for row in results %}
-                     <tr>
-                          {% for key, header_name in selected_columns %}
-                             <td>{{ row.get(key, '') }}</td> {# Use .get() for safety #}
-                          {% endfor %}
-                     </tr>
-                     {% endfor %}
-                 </tbody>
-            </table>
+
+        {# --- REMOVED old individual metric divs (seer, scop, spi, hp_refrigerant) --- #}
+
+        <div class="form-section">
+            <h3>Display Options</h3>
+            <div class="mb-3">
+                {{ form.fields_to_display.label(class="form-label") }}
+                {{ form.fields_to_display(class="form-select", id="fields_to_display_select", size="10") }}
+                {% if form.fields_to_display.errors %}{% for error in form.fields_to_display.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Grouping & Advanced Filtering</h3>
+            <div class="mb-3">
+                {{ form.group_by_field.label(class="form-label") }}
+                {{ form.group_by_field(class="form-select", id="group_by_field_select") }}
+                {% if form.group_by_field.errors %}{% for error in form.group_by_field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+            </div>
+            {# --- Retained Advanced Filtering section --- #}
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    {{ form.filter_field.label(class="form-label") }}
+                    {{ form.filter_field(class="form-select", id="adv_filter_field_select") }}
+                    {% if form.filter_field.errors %}{% for error in form.filter_field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                </div>
+                <div class="col-md-4 mb-3">
+                    {{ form.custom_filter_field.label(class="form-label") }}
+                    {{ form.custom_filter_field(class="form-control") }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    {{ form.filter_value.label(class="form-label") }}
+                    {{ form.filter_value(class="form-control") }}
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            {{ form.submit(class="btn btn-primary btn-lg") }}
+        </div>
+    </form>
+
+    {# --- Results Table and Pagination (remains structurally similar to last version) --- #}
+    {% if query_executed %}
+        <hr class="my-4">
+        <h2 class="h3">Search Results</h2>
+        {% if results or (pagination and pagination.total > 0) %}
+            {% if export_url and export_url != '#' %}
+                <a href="{{ export_url }}" class="btn btn-success export-link mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download me-2" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                    </svg>
+                    Export All Results to CSV
+                </a>
+            {% endif %}
+            
+            {% if results %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            {% for key, header_name in selected_columns %}
+                                <th>{{ header_name }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in results %} 
+                            <tr>
+                                {% for def_name, header_name in selected_columns %} {# def_name is 'ac_seer', 'manufacturer', etc. #}
+                                    <td>{{ item[def_name] if item[def_name] is not none else '--' }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% elif not is_grouped %}
+                 <div class="alert alert-info">No devices found for the current page matching your criteria.</div>
+            {% endif %}
+
+            {% if pagination and pagination.pages > 1 %}
+            <nav aria-label="Search results navigation">
+                <ul class="pagination justify-content-center">
+                    {# ... (pagination links as in previous version, using persistent_search_args) ... #}
+                </ul>
+            </nav>
+            <p class="text-center text-muted small mt-2">Page {{ pagination.page }} of {{ pagination.pages }} (Total items: {{ pagination.total }})</p>
+            {% elif pagination and pagination.total > 0 and pagination.pages == 1 and results %}
+                 <p class="text-center text-muted small mt-2">Total items: {{ pagination.total }}</p>
+            {% endif %}
+        {% elif query_executed %}
+            <div class="alert alert-warning mt-4">No devices found matching your criteria.</div>
         {% endif %}
-    
-    
-    {% elif query_executed %}
-        <div class="alert alert-info">No devices found matching your criteria.</div>
     {% endif %}
-    </div>
-</div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // Parse the definitions passed from Flask (routes.py)
+        // Ensure these are correctly passed as JSON strings and parsed here.
+        const FIELD_DEFINITIONS = JSON.parse('{{ field_definitions_json | safe }}');
+        const DEVICE_TYPE_MODEL_MAPPING = JSON.parse('{{ device_type_model_mapping_json | safe }}');
+        const DEVICE_TYPES_DISPLAY = JSON.parse('{{ device_types_json | safe }}'); // Contains key-to-display name mapping for device types
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const deviceTypeSelect = document.getElementById('device_type_select');
+            const metricNameSelect = document.getElementById('search_metric_name_select');
+            const fieldsToDisplaySelect = document.getElementById('fields_to_display_select');
+            const groupByFieldSelect = document.getElementById('group_by_field_select');
+            // const advFilterFieldSelect = document.getElementById('adv_filter_field_select'); // For advanced filter if also made dynamic
+
+            function populateSelectWithOptions(selectElement, optionsArray, includeEmptyFirst = true) {
+                if (!selectElement) return;
+                // Preserve selected value if it exists in new options
+                const currentSelectedValue = selectElement.value;
+                selectElement.innerHTML = ''; // Clear existing options
+
+                if (includeEmptyFirst) {
+                    const emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = '-- Select --';
+                    selectElement.appendChild(emptyOpt);
+                }
+
+                optionsArray.forEach(optData => { // optData is [value, label]
+                    const option = document.createElement('option');
+                    option.value = optData[0]; // 'name' from definition
+                    option.textContent = optData[1]; // 'label' from definition
+                    selectElement.appendChild(option);
+                });
+
+                // Try to re-select previous value if it's still a valid option
+                if (Array.from(selectElement.options).some(opt => opt.value === currentSelectedValue)) {
+                    selectElement.value = currentSelectedValue;
+                }
+            }
+            
+            function getRelevantFields(selectedDeviceTypeKey, purpose) {
+                let relevantFields = [];
+                let seenNames = new Set();
+
+                // Add common fields
+                for (const name in FIELD_DEFINITIONS) {
+                    const def = FIELD_DEFINITIONS[name];
+                    if (def.model_class_name === 'HVACDevice') {
+                        if ((purpose === 'searchable_metric' && def.metric && def.searchable) ||
+                            (purpose === 'displayable' && def.displayable) ||
+                            (purpose === 'groupable' && def.groupable)) {
+                            if (!seenNames.has(name)) {
+                                relevantFields.push([name, def.label]);
+                                seenNames.add(name);
+                            }
+                        }
+                    }
+                }
+
+                // Add device-specific fields
+                if (selectedDeviceTypeKey && DEVICE_TYPE_MODEL_MAPPING[selectedDeviceTypeKey]) {
+                    const modelNameToMatch = DEVICE_TYPE_MODEL_MAPPING[selectedDeviceTypeKey];
+                    for (const name in FIELD_DEFINITIONS) {
+                        const def = FIELD_DEFINITIONS[name];
+                        if (def.model_class_name === modelNameToMatch) {
+                           if ((purpose === 'searchable_metric' && def.metric && def.searchable) ||
+                               (purpose === 'displayable' && def.displayable) ||
+                               (purpose === 'groupable' && def.groupable)) {
+                                if (!seenNames.has(name)) {
+                                    relevantFields.push([name, def.label]);
+                                    seenNames.add(name);
+                                }
+                            }
+                        }
+                    }
+                } else if (!selectedDeviceTypeKey && purpose !== 'searchable_metric') { 
+                    // "Any" device type selected, show all displayable/groupable from all types
+                    // This can make the list very long.
+                    for (const name in FIELD_DEFINITIONS) {
+                        const def = FIELD_DEFINITIONS[name];
+                        if ((purpose === 'displayable' && def.displayable) ||
+                            (purpose === 'groupable' && def.groupable)) {
+                            if (!seenNames.has(name)) {
+                                relevantFields.push([name, def.label]);
+                                seen_names.add(name);
+                            }
+                        }
+                    }
+                }
+
+
+                if (purpose === 'groupable') {
+                    if (!seenNames.has('market_entry_year')) { // Add special grouping options
+                        relevantFields.push(['market_entry_year', 'Market Entry Year']);
+                    }
+                }
+                
+                // Sort by label for better UX
+                relevantFields.sort((a, b) => a[1].localeCompare(b[1]));
+                return relevantFields;
+            }
+
+
+            function updateDynamicSelects() {
+                const selectedDeviceTypeKey = deviceTypeSelect.value; // e.g., "air_conditioner"
+
+                const metricOptions = getRelevantFields(selectedDeviceTypeKey, 'searchable_metric');
+                populateSelectWithOptions(metricNameSelect, metricOptions, true);
+
+                const displayOptions = getRelevantFields(selectedDeviceTypeKey, 'displayable');
+                populateSelectWithOptions(fieldsToDisplaySelect, displayOptions, false); // false for SelectMultiple
+
+                const groupOptions = getRelevantFields(selectedDeviceTypeKey, 'groupable');
+                populateSelectWithOptions(groupByFieldSelect, groupOptions, true);
+                
+                // const advFilterOptions = getRelevantFields(selectedDeviceTypeKey, 'displayable');
+                // populateSelectWithOptions(advFilterFieldSelect, advFilterOptions, true);
+                // if(advFilterFieldSelect && !Array.from(advFilterFieldSelect.options).some(opt => opt.value === 'custom')) {
+                //     const customOpt = document.createElement('option');
+                //     customOpt.value = 'custom';
+                //     customOpt.textContent = 'Custom Field...';
+                //     advFilterFieldSelect.appendChild(customOpt);
+                // }
+            }
+
+            if (deviceTypeSelect) {
+                // Initial population based on current selection (e.g., from GET params)
+                // The form fields (search_metric_name, etc.) are already populated with choices
+                // from Python for the "no device type selected" state.
+                // This JS update refines them if a device type IS selected on page load.
+                updateDynamicSelects(); 
+                deviceTypeSelect.addEventListener('change', updateDynamicSelects);
+            }
+        });
+    </script>
 {% endblock %}

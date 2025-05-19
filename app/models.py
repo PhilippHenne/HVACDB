@@ -17,40 +17,39 @@ DEVICE_TYPES = {
 
 
 class HVACDevice(db.Model):
-    __tablename__ = 'hvacdevices' # Base table name
+    __tablename__ = 'hvacdevices'
 
     id = db.Column(db.Integer, primary_key=True)
-    # --- Common Fields ---
+    # --- Common Fields (ensure these are present in your unified CSVs or handled) ---
+    # model_identifier is crucial and should be consistently named in your CSVs (e.g., 'model_identifier')
+    # manufacturer is also crucial.
     manufacturer = db.Column(db.String(255), nullable=False, index=True)
-    model_identifier = db.Column(db.String(255), nullable=False, index=True)
+    model_identifier = db.Column(db.String(255), nullable=False, index=True) 
+    
     market_entry = db.Column(db.Date, nullable=True, index=True)
     market_exit = db.Column(db.Date, nullable=True)
-    #power_rating_kw = db.Column(db.Float, nullable=True)
-    noise_level_dba = db.Column(db.Float, nullable=True)
+    noise_level_dba = db.Column(db.Float, nullable=True) # General noise level, if applicable as common
     price_currency = db.Column(db.String(3), nullable=True)
     price_amount = db.Column(db.Float, nullable=True)
-    data_source = db.Column(db.String(255), nullable=True)
-    custom_fields = db.Column(JSON, nullable=True) # for less common or truly custom data
+    data_source = db.Column(db.String(255), nullable=True) # Source of the data entry
+    
     created_at = db.Column(db.TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = db.Column(db.TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
-    # --- End Common Fields ---
-
-    # --- Inheritance Discriminator ---
-    device_type = db.Column(db.String(50), nullable=False, index=True) # Changed from type for clarity
+    
+    device_type = db.Column(db.String(50), nullable=False, index=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'hvac_device_base', # Base identity (optional but good practice)
-        'polymorphic_on': device_type # Column SQLAlchemy uses to determine subclass
+        'polymorphic_identity': 'hvac_device_base',
+        'polymorphic_on': device_type
     }
 
     def __repr__(self):
-        return f'<{self.__class__.__name__} {self.id}: {self.manufacturer}>'
+        return f'<{self.__class__.__name__} {self.id}: {self.manufacturer} {self.model_identifier}>'
 
-    # Base to_dict - subclasses can extend this
     def to_dict(self):
         common_data = {
             'id': self.id,
-            'device_type': self.device_type, # Include the type
+            'device_type': DEVICE_TYPES.get(self.device_type, self.device_type), # Show user-friendly type name
             'manufacturer': self.manufacturer,
             'model_identifier': self.model_identifier,
             'market_entry': self.market_entry.isoformat() if isinstance(self.market_entry, date) else None,
@@ -59,11 +58,11 @@ class HVACDevice(db.Model):
             'price_currency': self.price_currency,
             'price_amount': self.price_amount,
             'data_source': self.data_source,
-            'custom_fields': self.custom_fields if isinstance(self.custom_fields, dict) else {},
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
         return common_data
+    
 
 # --- Air Conditioner Subclass ---
 class AirConditioner(HVACDevice):
@@ -100,10 +99,6 @@ class AirConditioner(HVACDevice):
     refrigerant_type = db.Column(db.String(100), nullable=True)
     refrigerant_gwp = db.Column(db.Integer, nullable=True)
     noise_level_outdoor_cooling_db = db.Column(db.Float, nullable=True)
-
-    # --- NEWLY ADDED FIELDS ---
-    # Identifiers (if not in base or to store specifically)
-    model_identifier = db.Column(db.String(255), nullable=True) # EPREL's model identifier
 
     # Seasonal Efficiency Parameters ηs (eta_s)
     eta_s_cooling_percent = db.Column(db.Float, nullable=True)
@@ -224,75 +219,124 @@ class HeatPump(HVACDevice):
     __tablename__ = 'heat_pumps'
     id = db.Column(db.Integer, ForeignKey('hvacdevices.id'), primary_key=True)
 
-    # --- Base Attributes from CSV
-    # model_name is inherited via model_identifier from HVACDevice base
-    refrigerant = db.Column(db.String(50), nullable=True)
+    # --- Base Characteristics (from your KPI_COLUMN_MAP or other direct fields) ---
+    # model_identifier and manufacturer are inherited from HVACDevice
+    trade_name = db.Column(db.String(255), nullable=True)
+    model_type = db.Column(db.String(100), nullable=True) # e.g., Air/Water
+    software_name = db.Column(db.String(100), nullable=True)
+    software_version = db.Column(db.String(50), nullable=True)
+    # factory_country = db.Column(db.String(100), nullable=True) # Optional
+    # factory_city = db.Column(db.String(100), nullable=True)    # Optional
+    
+    refrigerant = db.Column(db.String(50), nullable=True) # This is HP specific refrigerant
     main_power_supply = db.Column(db.String(100), nullable=True)
     control_of_pump_speed = db.Column(db.String(100), nullable=True)
-    reversibility_on_water_side = db.Column(db.String(50), nullable=True) # Or Boolean if applicable
-    simultaneous_heating = db.Column(db.String(50), nullable=True) # Or Boolean
-    esp_duct = db.Column(db.String(50), nullable=True) # Or Float? Check data
-    outdoor_heat_exc_type = db.Column(db.String(100), nullable=True)
-    indoor_heat_exc_type = db.Column(db.String(100), nullable=True)
+    reversibility_on_water_side = db.Column(db.String(50), nullable=True)
+    simultaneous_heating = db.Column(db.String(50), nullable=True)
+    esp_duct = db.Column(db.String(50), nullable=True) # Could be float if always numeric
+    outdoor_heat_exchanger_type = db.Column(db.String(100), nullable=True)
+    indoor_heat_exchanger_type = db.Column(db.String(100), nullable=True)
     expansion_valve_type = db.Column(db.String(100), nullable=True)
-    unit_capacity_control = db.Column(db.String(100), nullable=True) # Compressor detail
-    compressor_type = db.Column(db.String(100), nullable=True) # Compressor detail
-    compressor_inverter = db.Column(db.String(50), nullable=True) # Compressor detail - Or Boolean
-    compressor_number = db.Column(db.Integer, nullable=True) # Compressor detail
+    
+    unit_capacity_control = db.Column(db.String(100), nullable=True)
+    compressor_type = db.Column(db.String(100), nullable=True)
+    compressor_inverter = db.Column(db.String(50), nullable=True) # e.g., 'Yes', 'No', or type
+    compressor_number = db.Column(db.Integer, nullable=True)
 
-    # Relationship to performance data
-    performance_data = relationship("HeatPumpPerformance", back_populates="heat_pump", cascade="all, delete-orphan")
+    # Acoustics
+    sound_power_level_lw = db.Column(db.Float, nullable=True)
+
+    # Cooling Performance (Flattened KPIs)
+    pc_a35_w12_7 = db.Column(db.Float, nullable=True)    # Cooling Capacity
+    eer_a35_w12_7 = db.Column(db.Float, nullable=True)   # EER
+    seer_ac = db.Column(db.Float, nullable=True)         # SEER for AC mode
+    eta_sc_ac = db.Column(db.Float, nullable=True)       # ηsc for AC mode
+
+    # Heating Performance - LWT 35°C (Average Climate) (Flattened KPIs)
+    pdesignh_avg_lwt35 = db.Column(db.Float, nullable=True)
+    scop_avg_lwt35 = db.Column(db.Float, nullable=True)
+    eta_sh_avg_lwt35 = db.Column(db.Float, nullable=True)
+    ph_a7_w35 = db.Column(db.Float, nullable=True)      # Heating Capacity at A7/W35
+    cop_a7_w35 = db.Column(db.Float, nullable=True)     # COP at A7/W35
+    ph_a2_w35 = db.Column(db.Float, nullable=True)
+    cop_a2_w35 = db.Column(db.Float, nullable=True)
+    ph_am7_w35 = db.Column(db.Float, nullable=True)
+    cop_am7_w35 = db.Column(db.Float, nullable=True)
+
+    # Heating Performance - LWT 55°C (Average Climate) (Flattened KPIs)
+    pdesignh_avg_lwt55 = db.Column(db.Float, nullable=True)
+    scop_avg_lwt55 = db.Column(db.Float, nullable=True)
+    eta_sh_avg_lwt55 = db.Column(db.Float, nullable=True)
+    ph_a7_w55_approx = db.Column(db.Float, nullable=True) # Or ph_a7_w55_65 etc.
+    cop_a7_w55_approx = db.Column(db.Float, nullable=True)
+
+    # SEPR (Flattened KPIs)
+    sepr_mt = db.Column(db.Float, nullable=True)
+    sepr_ht = db.Column(db.Float, nullable=True)
+    sepr_lt = db.Column(db.Float, nullable=True)
+
+    # Standby Power (Flattened KPIs)
+    psbc_standby_cooling = db.Column(db.Float, nullable=True)
+    psbh_standby_heating = db.Column(db.Float, nullable=True)
+
+    # REMOVED: Relationship to HeatPumpPerformance
+    # performance_data = relationship("HeatPumpPerformance", back_populates="heat_pump", cascade="all, delete-orphan")
 
     __mapper_args__ = {
-        'polymorphic_identity': 'heat_pump', # Key used in DEVICE_TYPES and MODEL_MAP
+        'polymorphic_identity': 'heat_pump',
     }
 
     def to_dict(self):
         data = super().to_dict()
         data.update({
+            # Base characteristics specific to HeatPump or previously in HeatPump table
+            'trade_name': self.trade_name,
+            'model_type': self.model_type,
+            'software_name': self.software_name,
+            'software_version': self.software_version,
             'refrigerant': self.refrigerant,
             'main_power_supply': self.main_power_supply,
             'control_of_pump_speed': self.control_of_pump_speed,
             'reversibility_on_water_side': self.reversibility_on_water_side,
             'simultaneous_heating': self.simultaneous_heating,
             'esp_duct': self.esp_duct,
-            'outdoor_heat_exc_type': self.outdoor_heat_exc_type,
-            'indoor_heat_exc_type': self.indoor_heat_exc_type,
+            'outdoor_heat_exchanger_type': self.outdoor_heat_exchanger_type,
+            'indoor_heat_exchanger_type': self.indoor_heat_exchanger_type,
             'expansion_valve_type': self.expansion_valve_type,
             'unit_capacity_control': self.unit_capacity_control,
             'compressor_type': self.compressor_type,
             'compressor_inverter': self.compressor_inverter,
             'compressor_number': self.compressor_number,
-            # Exclude performance_data list from default dict representation
+            
+            # Flattened KPIs
+            'sound_power_level_lw': self.sound_power_level_lw,
+            'pc_a35_w12_7': self.pc_a35_w12_7,
+            'eer_a35_w12_7': self.eer_a35_w12_7,
+            'seer_ac': self.seer_ac,
+            'eta_sc_ac': self.eta_sc_ac,
+            'pdesignh_avg_lwt35': self.pdesignh_avg_lwt35,
+            'scop_avg_lwt35': self.scop_avg_lwt35,
+            'eta_sh_avg_lwt35': self.eta_sh_avg_lwt35,
+            'ph_a7_w35': self.ph_a7_w35,
+            'cop_a7_w35': self.cop_a7_w35,
+            'ph_a2_w35': self.ph_a2_w35,
+            'cop_a2_w35': self.cop_a2_w35,
+            'ph_am7_w35': self.ph_am7_w35,
+            'cop_am7_w35': self.cop_am7_w35,
+            'pdesignh_avg_lwt55': self.pdesignh_avg_lwt55,
+            'scop_avg_lwt55': self.scop_avg_lwt55,
+            'eta_sh_avg_lwt55': self.eta_sh_avg_lwt55,
+            'ph_a7_w55_approx': self.ph_a7_w55_approx,
+            'cop_a7_w55_approx': self.cop_a7_w55_approx,
+            'sepr_mt': self.sepr_mt,
+            'sepr_ht': self.sepr_ht,
+            'sepr_lt': self.sepr_lt,
+            'psbc_standby_cooling': self.psbc_standby_cooling,
+            'psbh_standby_heating': self.psbh_standby_heating,
         })
+        # Remove any keys that are None if desired, or let them be null in JSON
+        # data = {k: v for k, v in data.items() if v is not None} # Optional: removes None values from dict
         return data    
-
-
-class HeatPumpPerformance(db.Model):
-    __tablename__ = 'heat_pump_performance'
-
-    id = db.Column(db.Integer, primary_key=True) # Own primary key
-    heat_pump_id = db.Column(db.Integer, ForeignKey('heat_pumps.id'), nullable=False, index=True) # Foreign key
-    condition_group = db.Column(db.String(100), nullable=True, index=True) # e.g., Seasonal, Standard Point
-    condition_name = db.Column(db.String(255), nullable=False, index=True) # e.g., A7/W40-45, SCOP Average W35
-    metric_name = db.Column(db.String(100), nullable=False, index=True) # e.g., Ph, COP, SCOP
-    metric_value = db.Column(db.Float, nullable=False)
-
-    # Relationship back to the HeatPump
-    heat_pump = relationship("HeatPump", back_populates="performance_data")
-
-    def __repr__(self):
-        return f'<HeatPumpPerformance {self.id}: HP={self.heat_pump_id} {self.condition_name} {self.metric_name}={self.metric_value}>'
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'heat_pump_id': self.heat_pump_id,
-            'condition_group': self.condition_group,
-            'condition_name': self.condition_name,
-            'metric_name': self.metric_name,
-            'metric_value': self.metric_value,
-        }
 
 
 class ResidentialVentilationUnit(HVACDevice):
