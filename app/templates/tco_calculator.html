@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %} - TCO Calculator{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <style>
+        .tco-form-section, .tco-results-section {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: .25rem;
+        }
+        .tco-form-section h3, .tco-results-section h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #ced4da;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 1.25rem;
+        }
+        .conditional-field {
+            display: none; /* Hidden by default */
+            padding-left: 20px;
+            margin-top: 10px;
+            border-left: 3px solid #0d6efd; /* Accent for conditional sections */
+        }
+        .results-table {
+            width: 100%;
+            margin-top: 15px;
+        }
+        .results-table th, .results-table td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .results-table th {
+            text-align: left;
+            width: 40%;
+            font-weight: normal;
+            color: #555;
+        }
+        .results-table td {
+            font-weight: bold;
+        }
+        .total-tco-value {
+            font-size: 1.5em;
+            color: #28a745; /* Green for the final result */
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ title }}</h1>
+</div>
+
+<form method="POST" action="{{ url_for('main.tco_calculator') }}">
+    {{ form.hidden_tag() }}
+
+    <div class="tco-form-section">
+        <h3>General Assumptions</h3>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.annual_heat_demand.label(class="form-label") }}
+                {{ form.annual_heat_demand(class="form-control", placeholder="e.g., 15000") }}
+                {% if form.annual_heat_demand.errors %}{% for error in form.annual_heat_demand.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                {% if form.annual_heat_demand.description %}<div class="form-text">{{ form.annual_heat_demand.description }}</div>{% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ form.electricity_price.label(class="form-label") }}
+                {{ form.electricity_price(class="form-control", placeholder="e.g., 0.30") }}
+                {% if form.electricity_price.errors %}{% for error in form.electricity_price.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                {% if form.electricity_price.description %}<div class="form-text">{{ form.electricity_price.description }}</div>{% endif %}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.annual_maintenance_cost.label(class="form-label") }}
+                {{ form.annual_maintenance_cost(class="form-control", placeholder="e.g., 150") }}
+                {% if form.annual_maintenance_cost.errors %}{% for error in form.annual_maintenance_cost.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                {% if form.annual_maintenance_cost.description %}<div class="form-text">{{ form.annual_maintenance_cost.description }}</div>{% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ form.system_lifetime.label(class="form-label") }}
+                {{ form.system_lifetime(class="form-control", placeholder="e.g., 20") }}
+                {% if form.system_lifetime.errors %}{% for error in form.system_lifetime.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                {% if form.system_lifetime.description %}<div class="form-text">{{ form.system_lifetime.description }}</div>{% endif %}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.discount_rate.label(class="form-label") }}
+                {{ form.discount_rate(class="form-control", placeholder="e.g., 0.04 for 4%") }}
+                {% if form.discount_rate.errors %}{% for error in form.discount_rate.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                {% if form.discount_rate.description %}<div class="form-text">{{ form.discount_rate.description }}</div>{% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ form.capital_cost_subsidy.label(class="form-label") }}
+                {{ form.capital_cost_subsidy(class="form-control", placeholder="e.g., 0.3 for 30%") }}
+                {% if form.capital_cost_subsidy.errors %}{% for error in form.capital_cost_subsidy.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                {% if form.capital_cost_subsidy.description %}<div class="form-text">{{ form.capital_cost_subsidy.description }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="tco-form-section">
+        <h3>Heat Pump Selection</h3>
+        <div class="mb-3">
+            {{ form.hp_data_source.label(class="form-label") }}
+            {% for subfield in form.hp_data_source %}
+                <div class="form-check">
+                    {{ subfield(class="form-check-input", id=subfield.id) }}
+                    {{ subfield.label(class="form-check-label", for=subfield.id) }}
+                </div>
+            {% endfor %}
+            {% if form.hp_data_source.errors %}{% for error in form.hp_data_source.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+        </div>
+
+        <div id="custom_hp_fields" class="conditional-field mt-3">
+            <h4>Custom Heat Pump Details</h4>
+            <div class="mb-3">
+                {{ form.custom_hp_price.label(class="form-label") }}
+                {{ form.custom_hp_price(class="form-control") }}
+                {% if form.custom_hp_price.errors %}{% for error in form.custom_hp_price.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                {% if form.custom_hp_price.description %}<div class="form-text">{{ form.custom_hp_price.description }}</div>{% endif %}
+            </div>
+            <div class="mb-3">
+                {{ form.custom_hp_scop.label(class="form-label") }}
+                {{ form.custom_hp_scop(class="form-control") }}
+                {% if form.custom_hp_scop.errors %}{% for error in form.custom_hp_scop.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                {% if form.custom_hp_scop.description %}<div class="form-text">{{ form.custom_hp_scop.description }}</div>{% endif %}
+            </div>
+        </div>
+
+        <div id="database_hp_fields" class="conditional-field mt-3">
+            <h4>Database Heat Pump Details</h4>
+            <div class="mb-3">
+                {{ form.db_hp_id.label(class="form-label") }}
+                {{ form.db_hp_id(class="form-select") }}
+                {% if form.db_hp_id.errors %}{% for error in form.db_hp_id.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                {% if form.db_hp_id.description %}<div class="form-text">{{ form.db_hp_id.description }}</div>{% endif %}
+            </div>
+            <div class="mb-3">
+                {{ form.db_hp_price_override.label(class="form-label") }}
+                {{ form.db_hp_price_override(class="form-control") }}
+                {% if form.db_hp_price_override.errors %}{% for error in form.db_hp_price_override.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
+                {% if form.db_hp_price_override.description %}<div class="form-text">{{ form.db_hp_price_override.description }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        {{ form.submit(class="btn btn-primary btn-lg") }}
+    </div>
+</form>
+
+{% if tco_result %}
+<hr class="my-4">
+<div class="tco-results-section">
+    <h3>TCO Calculation Results for: {{ tco_result.selected_hp }}</h3>
+    
+    <h4>Inputs Used:</h4>
+    <table class="results-table">
+        {% for key, value in tco_result.inputs.items() %}
+        <tr>
+            <th>{{ key }}</th>
+            <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h4 class="mt-3">Intermediate Calculations:</h4>
+    <table class="results-table">
+        {% for key, value in tco_result.intermediate_calculations.items() %}
+        <tr>
+            <th>{{ key }}</th>
+            <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h4 class="mt-4">Total Cost of Ownership (TCO):</h4>
+    <p class="total-tco-value">€ {{ tco_result.total_tco_value }}</p>
+    <p class="text-muted small">(Over {{ tco_result.inputs['Lifetime (Years)'] }} years, discounted)</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const hpDataSourceRadios = document.querySelectorAll('input[name="hp_data_source"]');
+    const customHpFieldsDiv = document.getElementById('custom_hp_fields');
+    const databaseHpFieldsDiv = document.getElementById('database_hp_fields');
+
+    // Function to toggle visibility of conditional fields
+    function toggleHpFields() {
+        const selectedSource = document.querySelector('input[name="hp_data_source"]:checked').value;
+        if (selectedSource === 'custom') {
+            customHpFieldsDiv.style.display = 'block';
+            databaseHpFieldsDiv.style.display = 'none';
+        } else if (selectedSource === 'database') {
+            customHpFieldsDiv.style.display = 'none';
+            databaseHpFieldsDiv.style.display = 'block';
+        } else {
+            customHpFieldsDiv.style.display = 'none';
+            databaseHpFieldsDiv.style.display = 'none';
+        }
+    }
+
+    // Add event listeners to radio buttons
+    hpDataSourceRadios.forEach(radio => {
+        radio.addEventListener('change', toggleHpFields);
+    });
+
+    // Initial toggle based on pre-selected value (if any)
+    if (document.querySelector('input[name="hp_data_source"]:checked')) {
+        toggleHpFields();
+    }
+});
+</script>
+{% endblock %}
