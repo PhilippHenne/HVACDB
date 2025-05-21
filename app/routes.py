@@ -16,31 +16,20 @@ from datetime import date
 main = Blueprint('main', __name__)
 
 
-# Updated VALID_STANDARD_FIELDS
-# These are fields primarily on the HVACDevice base model or common identifiers
 VALID_STANDARD_FIELDS = {
     'id': HVACDevice.id, # Added ID
     'manufacturer': HVACDevice.manufacturer,
     'device_type': HVACDevice.device_type,
-    'model_identifier': HVACDevice.model_identifier, # Corrected mapping
+    'model_identifier': HVACDevice.model_identifier,
     'market_entry': HVACDevice.market_entry,
     'noise_level_dba': HVACDevice.noise_level_dba,
     'price_amount': HVACDevice.price_amount,
     'price_currency': HVACDevice.price_currency,
     'data_source': HVACDevice.data_source,
-    # Note: Specific metrics like seer, scop, specificpowerinput are handled via dedicated search fields and joins,
-    # but can be added here if you want them available in the generic 'Filter by Field' dropdown for display purposes,
-    # though it might be less intuitive for filtering that way.
-    # For display, they are handled by the forms.STANDARD_FIELDS list now.
 }
 
-# GROUPING_FIELDS and STANDARD_FIELDS from forms.py are used by the form,
-# this VALID_STANDARD_FIELDS is for the backend query building for generic filters.
-
-# Constants for device type strings from models.py or forms.py (ensure consistency)
-# from .models import DEVICE_TYPES # Not strictly needed here if using strings directly
 AIR_CONDITIONER_TYPE = 'air_conditioner'
-HEAT_PUMP_TYPE = 'heat_pump' # Currently not used for specific metric search in this update
+HEAT_PUMP_TYPE = 'heat_pump' 
 RESIDENTIAL_VENTILATION_UNIT_TYPE = 'residential_ventilation_unit'
 MODEL_CLASSES = {
     'HVACDevice': HVACDevice,
@@ -66,11 +55,11 @@ def build_and_run_search_query(search_params, page=None, per_page=None):
                 return val[0] if len(val) > 0 and val[0] is not None and str(val[0]).strip() != '' else None
             elif isinstance(val, str):
                 return val if val.strip() != '' else None
-            elif val is not None: # Handles non-string, non-list types that are not None
+            elif val is not None:
                 return val 
             return None
 
-        # --- 1. Apply Basic Filters (on HVACDevice model) ---
+        # Basic Filters
         manufacturer_val = get_single_param('manufacturer')
         if manufacturer_val:
             base_query = base_query.filter(HVACDevice.manufacturer.ilike(f'%{manufacturer_val}%'))
@@ -88,7 +77,7 @@ def build_and_run_search_query(search_params, page=None, per_page=None):
             except ValueError:
                 base_query = base_query.filter(HVACDevice.model_identifier.ilike(f'%{id_or_model_val}%'))
 
-        # --- 2. Apply Generic Metric Filter ---
+        # Generic Metric Filter
         metric_name_key = get_single_param('search_metric_name') 
         metric_operator = get_single_param('search_metric_operator')
         metric_value_str = get_single_param('search_metric_value')
@@ -111,11 +100,9 @@ def build_and_run_search_query(search_params, page=None, per_page=None):
                 else:
                     column_to_filter = getattr(TargetModelClassForMetric, model_attr_name)
                     
-                    # Explicitly join if filtering on a subclass attribute
                     if TargetModelClassForMetric != HVACDevice:
                         current_app.logger.debug(f"Metric filter: Explicitly joining to {TargetModelClassForMetric.__name__} for attribute {model_attr_name}")
                         base_query = base_query.join(TargetModelClassForMetric)
-                        # This join works because of the polymorphic setup; SQLAlchemy knows how HVACDevice relates to its subclasses.
                                         
                     processed_value = None
                     if metric_value_str.strip() == '':
@@ -139,16 +126,11 @@ def build_and_run_search_query(search_params, page=None, per_page=None):
             elif metric_name_key:
                 flash(f"Metric '{metric_name_key}' not found or not searchable.", "warning")
         
-        # --- 3. Advanced Generic Filter (if kept) ---
+        # Advanced Generic Filter
         adv_filter_field_key = get_single_param('filter_field')
         adv_filter_value = get_single_param('filter_value')
-        # Removed adv_custom_filter_key as custom_fields were removed from models
-        # If you re-add custom_fields, this part needs to be reinstated carefully.
 
         if adv_filter_field_key and adv_filter_value is not None:
-            # if adv_filter_field_key == 'custom' and adv_custom_filter_key: # Logic for custom JSON fields removed
-            #    base_query = base_query.filter(HVACDevice.custom_fields[adv_custom_filter_key].astext().ilike(f'%{str(adv_filter_value)}%'))
-            # else:
             adv_filter_def = FIELD_DEFINITIONS.get(adv_filter_field_key)
             if adv_filter_def:
                 adv_model_class_name = adv_filter_def['model_class_name']
@@ -179,16 +161,13 @@ def build_and_run_search_query(search_params, page=None, per_page=None):
                             base_query = base_query.filter(adv_column_to_filter == adv_processed_value)
                 else:
                     flash(f"Advanced filter field '{adv_filter_field_key}' misconfigured or attribute not found.", "warning")
-            # Removed 'else' for 'custom' key, as custom_fields are gone.
-            # else:
-            #    flash(f"Advanced filter field '{adv_filter_field_key}' not defined.", "warning")
 
 
         current_app.logger.debug(f"Query after all filters, before grouping/ordering: {str(base_query.statement.compile(compile_kwargs={'literal_binds': True}))}")
 
-        # --- 4. Grouping ---
+        # Grouping
         group_by_field_key = get_single_param('group_by_field')
-        query_before_grouping = base_query # Save state before potentially changing query for grouping
+        query_before_grouping = base_query
 
         if group_by_field_key:
             group_def = FIELD_DEFINITIONS.get(group_by_field_key) or \
@@ -199,7 +178,6 @@ def build_and_run_search_query(search_params, page=None, per_page=None):
                 header_name = group_def['label']
                 grouping_expression_col = None
                 
-                # query_for_grouping starts from the already filtered base_query
                 query_for_grouping = base_query 
 
                 if group_by_field_key == 'market_entry_year':
@@ -212,7 +190,6 @@ def build_and_run_search_query(search_params, page=None, per_page=None):
                     if GroupModelClass and hasattr(GroupModelClass, group_model_attr):
                         if GroupModelClass != HVACDevice:
                             current_app.logger.debug(f"Grouping: Explicitly joining to {GroupModelClass.__name__} for attribute {group_model_attr}")
-                            # Apply join to the query that will be used for grouping
                             query_for_grouping = query_for_grouping.join(GroupModelClass)
                         grouping_expression_col = getattr(GroupModelClass, group_model_attr).label('grouping_key')
                     else:
@@ -220,7 +197,6 @@ def build_and_run_search_query(search_params, page=None, per_page=None):
                         is_grouped = False
                 
                 if is_grouped and grouping_expression_col is not None:
-                    # Apply grouping to the (potentially joined) query_for_grouping
                     base_query = query_for_grouping.with_entities(
                                        grouping_expression_col, 
                                        func.count(HVACDevice.id).label('count')
@@ -228,13 +204,13 @@ def build_and_run_search_query(search_params, page=None, per_page=None):
                     selected_columns_tuples = [('grouping_key', header_name), ('count', 'Count')]
                 else: 
                     is_grouped = False
-                    base_query = query_before_grouping # Revert if grouping failed
+                    base_query = query_before_grouping
             else:
                 flash(f"Grouping field '{group_by_field_key}' not found or not groupable.", "warning")
                 is_grouped = False
-                base_query = query_before_grouping # Revert if grouping field invalid
+                base_query = query_before_grouping
         
-        # --- 5. Execute Query / Paginate ---
+        # Query Execution / Pagination
         if not is_grouped:
             order_by_expr = HVACDevice.id.desc()
             base_query = base_query.order_by(order_by_expr) 
@@ -249,7 +225,7 @@ def build_and_run_search_query(search_params, page=None, per_page=None):
             current_app.logger.debug(f"Final Grouped Query: {str(base_query.statement.compile(compile_kwargs={'literal_binds': True}))}")
             results_raw = base_query.all()
 
-        # --- 6. Process Results for Display ---
+        # Results presentation
         if is_grouped:
             results_data = [row._asdict() for row in results_raw]
         else: 
@@ -316,20 +292,18 @@ def build_and_run_search_query(search_params, page=None, per_page=None):
 
 @main.route('/')
 def index():
-    """Home page"""
     return render_template('index.html')
 
 
 @main.route('/add_device', methods=['GET', 'POST'])
 def add_device():
-    form = HVACDeviceForm() # This form contains ALL possible fields
+    form = HVACDeviceForm() 
     if form.validate_on_submit():
-        selected_type_key = form.device_type.data # e.g., 'air_conditioner'
+        selected_type_key = form.device_type.data
         ModelClass = MODEL_MAP.get(selected_type_key) 
 
         if not ModelClass:
             flash(f"Invalid device type selected: {selected_type_key}", "danger")
-            # Return with form and definitions for re-rendering
             return render_template('add_device.html', 
                                    title="Add HVAC Device", 
                                    form=form,
@@ -337,30 +311,18 @@ def add_device():
                                    device_type_model_mapping_json=json.dumps(DEVICE_TYPE_MODEL_MAPPING),
                                    device_types_json=json.dumps(DEVICE_TYPES))
 
-        # Prepare data for the selected model class
         data_for_model = {'device_type': selected_type_key}
         
-        # Iterate through form fields and assign data if it's relevant for the selected ModelClass
         for field_name, field_obj in form._fields.items():
             if field_name in ['csrf_token', 'submit', 'device_type']:
                 continue
-
-            # Check if this form field (field_name) corresponds to an attribute in FIELD_DEFINITIONS
-            # and if that attribute belongs to the selected ModelClass or is common (HVACDevice)
-            field_def_key = None # The key in FIELD_DEFINITIONS that matches this form field
-            
-            # Try to find the definition for the form field.
-            # Form field names should ideally match the 'name' in FIELD_DEFINITIONS or be derivable.
-            # For simplicity, let's assume form field names directly match model attributes
-            # or the 'name' in FIELD_DEFINITIONS if they are prefixed (e.g. 'ac_seer').
-            # The HVACDeviceForm currently uses model attribute names directly.
-            
+            field_def_key = None
+                    
             definition_to_check = None
-            # Find the definition whose 'model_attr' matches the form field_name
             for def_key, f_def in FIELD_DEFINITIONS.items():
                 if f_def['model_attr'] == field_name:
                     definition_to_check = f_def
-                    field_def_key = def_key # Use the definition's unique name
+                    field_def_key = def_key
                     break
             
             if definition_to_check:
@@ -368,36 +330,25 @@ def add_device():
                 selected_model_class_name = DEVICE_TYPE_MODEL_MAPPING.get(selected_type_key)
 
                 if field_model_class_name == 'HVACDevice' or field_model_class_name == selected_model_class_name:
-                    # This field is relevant, get its data
                     if field_obj.data is not None:
-                         # Handle empty strings for optional fields that are not numbers/dates
                         if isinstance(field_obj.data, str) and field_obj.data.strip() == "" and definition_to_check.get('type') not in ['float', 'integer', 'date']:
-                            data_for_model[field_name] = None # Or skip if None is not desired
+                            data_for_model[field_name] = None
                         elif isinstance(field_obj.data, str) and field_obj.data.strip() == "" and definition_to_check.get('type') in ['float', 'integer']:
-                            data_for_model[field_name] = None # Treat empty string as None for numeric
+                            data_for_model[field_name] = None
                         else:
                             data_for_model[field_name] = field_obj.data
-            # else:
-            #    current_app.logger.warning(f"Field {field_name} from form not found in FIELD_DEFINITIONS or not relevant for {selected_type_key}")
-
-
-        # Note: custom_fields was removed from the model in previous steps.
-        # If you had a general custom_fields TextArea in HVACDeviceForm, it would be handled here.
-        # current_app.logger.debug(f"Data for model {ModelClass.__name__}: {data_for_model}")
 
         try:
             device = ModelClass(**data_for_model)
             db.session.add(device)
             db.session.commit()
             flash(f'{DEVICE_TYPES.get(selected_type_key, selected_type_key)} added successfully!', 'success')
-            return redirect(url_for('main.search')) # Or to a success page, or add another
+            return redirect(url_for('main.search')) 
         except Exception as e:
             db.session.rollback()
             flash(f"Error adding device: {e}", "danger")
             current_app.logger.error(f"Add device error: {e}", exc_info=True)
-            # Fall through to render template with form and definitions
 
-    # For GET request or POST with errors
     return render_template('add_device.html', 
                            title="Add HVAC Device", 
                            form=form,
@@ -471,7 +422,6 @@ def search():
             return redirect(url_for('main.search', **query_params_for_redirect))
         else: 
             flash("Please correct the errors in the form.", "warning")
-            # Pass field definitions even on POST validation error for form re-rendering
             return render_template('search.html', form=form, results=[], query_executed=False,
                                    selected_columns=[], is_grouped=False, pagination=None,
                                    export_url="#", persistent_search_args={},
@@ -488,7 +438,6 @@ def search():
             query_executed = True
             search_active_params = request.args.to_dict(flat=False) 
             current_app.logger.debug(f"GET request: search_active_params for query: {search_active_params}")
-            #flash(search_active_params)
             results_data, selected_columns, is_grouped, pagination = build_and_run_search_query(
                 search_active_params,
                 page=page if not is_grouped else None,
@@ -515,7 +464,6 @@ def search():
                            pagination=pagination,
                            export_url=export_url,
                            persistent_search_args=persistent_search_args,
-                           # Pass definitions as JSON strings for JavaScript
                            field_definitions_json=json.dumps(FIELD_DEFINITIONS),
                            device_type_model_mapping_json=json.dumps(DEVICE_TYPE_MODEL_MAPPING),
                            device_types_json=json.dumps(DEVICE_TYPES) # DEVICE_TYPES from models.py
@@ -523,7 +471,6 @@ def search():
 
 @main.route('/export_csv')
 def export_csv():
-    # request.args will contain the persistent search args from the export link
     search_params_for_export = request.args.to_dict(flat=False) 
     
     current_fields_to_display = search_params_for_export.get('fields_to_display', [])
@@ -532,21 +479,19 @@ def export_csv():
     else:
         search_params_for_export['fields_to_display'] = [str(f) for f in current_fields_to_display if f is not None]
 
-    # Fetch ALL results for CSV
     results_for_csv, selected_columns_tuples, _, _ = build_and_run_search_query(
-        search_params_for_export, page=None, per_page=None # No pagination for export
+        search_params_for_export, page=None, per_page=None
     )
 
     if not results_for_csv:
         flash("No data found for export with the given criteria.", "info")
-        return redirect(url_for('main.search', **search_params_for_export)) # Redirect with original search params
+        return redirect(url_for('main.search', **search_params_for_export))
 
-    # ... (CSV generation logic from previous version using results_for_csv and selected_columns_tuples)
     si = io.StringIO()
     if not selected_columns_tuples and results_for_csv: 
         selected_columns_tuples = [(k, k.replace('_',' ').title()) for k in results_for_csv[0].keys()]
     
-    if not selected_columns_tuples: # Still no columns (e.g. results_for_csv was empty after all)
+    if not selected_columns_tuples:
         flash("No columns to export.", "warning")
         return redirect(url_for('main.search', **search_params_for_export))
 
@@ -580,32 +525,15 @@ def api_devices():
 
 @main.route('/api/device/<int:device_id>')
 def api_device(device_id):
-    """API endpoint to get a specific device"""
-    device = db.session.get(HVACDevice, device_id) # Use db.session.get for primary key lookup
+    device = db.session.get(HVACDevice, device_id)
     if device is None:
         return jsonify({"error": "Device not found"}), 404
     return jsonify(device.to_dict())
 
-@main.route('/api/efficiency/stats') # Minor change: Ensure date handling is robust
+@main.route('/api/efficiency/stats')
 def api_efficiency_stats():
-    """API endpoint to get efficiency statistics over time"""
-    # This query might become slow with many devices. Consider optimizations if needed.
-    
-    # Select distinct years from market_entry
-    # This example aggregates in Python, which is not ideal for large datasets.
-    # A database-level aggregation would be much more efficient.
-    
-    # For simplicity, keeping Python aggregation but acknowledging its limits.
-    # It would be better to group by year in SQL and calculate averages there.
-
     stats_data = {}
 
-    # Example: Aggregate SEER for Air Conditioners by market entry year
-    # This is a simplified example. A real implementation would need to be more robust
-    # and potentially use SQL aggregation.
-
-    # Query to get relevant data (example for SEER)
-    # This still fetches all devices, then processes in Python.
     devices = db.session.query(
         HVACDevice.market_entry, 
         AirConditioner.seer # Querying a subclass field
@@ -628,13 +556,9 @@ def api_efficiency_stats():
             result.append({
                 'year': year,
                 'avg_seer': data['seer_sum'] / data['count'],
-                'device_count': data['count'] # Count of devices contributing to this avg_seer
+                'device_count': data['count']
             })
     
-    # This is a very basic example for one metric (SEER). 
-    # Expanding this for multiple metrics (EER, SCOP, SEPR etc.) across different device types
-    # would require more complex queries or processing logic.
-
     return jsonify(result)
 
 @main.route('/tco_calculator', methods=['GET', 'POST'])
@@ -642,7 +566,7 @@ def tco_calculator():
     form = TCOCalculatorForm()
     available_heat_pumps = HeatPump.query.with_entities(
         HeatPump.id, HeatPump.manufacturer, HeatPump.model_identifier,
-        HeatPump.scop_avg_lwt35, # Ensure this attribute exists on your unified HeatPump model
+        HeatPump.scop_avg_lwt35,
         HeatPump.price_amount
     ).order_by(HeatPump.manufacturer, HeatPump.model_identifier).all()
     
@@ -657,7 +581,7 @@ def tco_calculator():
             H = form.annual_heat_demand.data
             F = form.electricity_price.data
             M = form.annual_maintenance_cost.data
-            T_lifetime = form.system_lifetime.data # Renamed to avoid conflict with TCO
+            T_lifetime = form.system_lifetime.data
             i_rate = form.discount_rate.data
             s_subsidy = form.capital_cost_subsidy.data if form.capital_cost_subsidy.data is not None else 0.0
 
@@ -669,8 +593,8 @@ def tco_calculator():
                 hp_scop = form.custom_hp_scop.data
                 selected_hp_info = "Custom Heat Pump"
             elif form.hp_data_source.data == 'database':
-                hp_id = form.db_hp_id.data # Already coerced to int or None
-                if hp_id is None: # Should have been caught by form.validate()
+                hp_id = form.db_hp_id.data
+                if hp_id is None:
                     flash("Invalid Heat Pump selection from database.", "danger")
                     raise ValueError("Database HP ID is None after validation.")
 
@@ -689,8 +613,6 @@ def tco_calculator():
                     flash(f"Capital cost for '{selected_hp_info}' must be provided or exist in DB.", "danger")
                     raise ValueError("Missing capital cost for DB HP.")
                 
-                # Use a representative SCOP field from your unified HeatPump model
-                # Ensure 'scop_avg_lwt35' or your chosen field exists on the HeatPump model
                 if hasattr(selected_hp, 'scop_avg_lwt35') and selected_hp.scop_avg_lwt35:
                     hp_scop = selected_hp.scop_avg_lwt35
                 else:
@@ -700,7 +622,7 @@ def tco_calculator():
             if not (hp_capital_cost > 0): raise ValueError("Heat pump capital cost must be positive.")
             if not (hp_scop > 0): raise ValueError("Heat pump SCOP must be positive.")
 
-            # --- TCO Calculation ---
+            # TCO Calculation
             # 1. Net Investment Cost (C_inv)
             C_inv = hp_capital_cost * (1 - s_subsidy)
 
@@ -715,13 +637,12 @@ def tco_calculator():
 
             # 5. NPV of Operational Expenditures (NPV_opex)
             NPV_opex = 0
-            if i_rate > 0: # Standard annuity formula
+            if i_rate > 0:
                 NPV_opex = A_opex * ( (1 - (1 + i_rate)**(-T_lifetime) ) / i_rate )
             elif i_rate == 0: # No discounting
                 NPV_opex = A_opex * T_lifetime
-            else: # Negative discount rate - unusual, handle as error or specific logic
+            else:
                 flash("Negative discount rate is not typical for this TCO calculation.", "warning")
-                # Decide how to handle: for now, treat as i_rate = 0 or raise error
                 NPV_opex = A_opex * T_lifetime # Defaulting to no discount
 
             # 6. Total Cost of Ownership (TCO)
@@ -751,9 +672,9 @@ def tco_calculator():
             }
             flash(f"TCO calculated successfully for {selected_hp_info}.", "success")
 
-        except ValueError as ve: # Catch specific errors for missing data
-            flash(str(ve), "danger") # Display the specific error message
-            tco_result = None # Ensure no partial result is shown
+        except ValueError as ve: 
+            flash(str(ve), "danger")
+            tco_result = None
         except Exception as e:
             flash(f"An error occurred during TCO calculation: {e}", "danger")
             current_app.logger.error(f"TCO Calculation error: {e}", exc_info=True)

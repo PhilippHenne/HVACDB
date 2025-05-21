@@ -20,10 +20,10 @@
             font-size: 1.25rem;
         }
         .conditional-field {
-            display: none; /* Hidden by default */
+            display: none;
             padding-left: 20px;
             margin-top: 10px;
-            border-left: 3px solid #0d6efd; /* Accent for conditional sections */
+            border-left: 3px solid #0d6efd; 
         }
         .results-table {
             width: 100%;
@@ -44,7 +44,7 @@
         }
         .total-tco-value {
             font-size: 1.5em;
-            color: #28a745; /* Green for the final result */
+            color: #28a745;
         }
     </style>
 {% endblock %}
@@ -195,7 +195,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const customHpFieldsDiv = document.getElementById('custom_hp_fields');
     const databaseHpFieldsDiv = document.getElementById('database_hp_fields');
 
-    // Function to toggle visibility of conditional fields
     function toggleHpFields() {
         const selectedSource = document.querySelector('input[name="hp_data_source"]:checked').value;
         if (selectedSource === 'custom') {
@@ -210,12 +209,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Add event listeners to radio buttons
     hpDataSourceRadios.forEach(radio => {
         radio.addEventListener('change', toggleHpFields);
     });
 
-    // Initial toggle based on pre-selected value (if any)
     if (document.querySelector('input[name="hp_data_source"]:checked')) {
         toggleHpFields();
     }

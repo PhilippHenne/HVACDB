@@ -4,7 +4,6 @@
 
 {% block styles %}
     <style>
-        /* ... (keep your existing search.html specific styles from previous version, or adapt Bootstrap) ... */
         .form-section { 
             background-color: #f8f9fa;
             border: 1px solid #dee2e6; 
@@ -19,7 +18,7 @@
             margin-bottom:15px;
             font-size: 1.25rem;
         }
-        .metric-search-group { /* New class for the metric search container */
+        .metric-search-group { 
             padding-left: 15px;
             border-left: 3px solid #0d6efd;
             margin-bottom: 10px;
@@ -37,9 +36,8 @@
             margin-top: 20px; 
             justify-content: center;
         }
-         /* Ensure select multiple takes up height */
         #fields_to_display_select {
-            min-height: 150px; /* Adjust as needed */
+            min-height: 150px;
         }
     </style>
 {% endblock %}
@@ -195,23 +193,20 @@
 {% block scripts %}
     <script>
         // Parse the definitions passed from Flask (routes.py)
-        // Ensure these are correctly passed as JSON strings and parsed here.
         const FIELD_DEFINITIONS = JSON.parse('{{ field_definitions_json | safe }}');
         const DEVICE_TYPE_MODEL_MAPPING = JSON.parse('{{ device_type_model_mapping_json | safe }}');
-        const DEVICE_TYPES_DISPLAY = JSON.parse('{{ device_types_json | safe }}'); // Contains key-to-display name mapping for device types
+        const DEVICE_TYPES_DISPLAY = JSON.parse('{{ device_types_json | safe }}');
 
         document.addEventListener('DOMContentLoaded', function() {
             const deviceTypeSelect = document.getElementById('device_type_select');
             const metricNameSelect = document.getElementById('search_metric_name_select');
             const fieldsToDisplaySelect = document.getElementById('fields_to_display_select');
             const groupByFieldSelect = document.getElementById('group_by_field_select');
-            // const advFilterFieldSelect = document.getElementById('adv_filter_field_select'); // For advanced filter if also made dynamic
 
             function populateSelectWithOptions(selectElement, optionsArray, includeEmptyFirst = true) {
                 if (!selectElement) return;
-                // Preserve selected value if it exists in new options
                 const currentSelectedValue = selectElement.value;
-                selectElement.innerHTML = ''; // Clear existing options
+                selectElement.innerHTML = '';
 
                 if (includeEmptyFirst) {
                     const emptyOpt = document.createElement('option');
@@ -220,14 +215,13 @@
                     selectElement.appendChild(emptyOpt);
                 }
 
-                optionsArray.forEach(optData => { // optData is [value, label]
+                optionsArray.forEach(optData => {
                     const option = document.createElement('option');
-                    option.value = optData[0]; // 'name' from definition
-                    option.textContent = optData[1]; // 'label' from definition
+                    option.value = optData[0];
+                    option.textContent = optData[1];
                     selectElement.appendChild(option);
                 });
 
-                // Try to re-select previous value if it's still a valid option
                 if (Array.from(selectElement.options).some(opt => opt.value === currentSelectedValue)) {
                     selectElement.value = currentSelectedValue;
                 }
@@ -237,7 +231,6 @@
                 let relevantFields = [];
                 let seenNames = new Set();
 
-                // Add common fields
                 for (const name in FIELD_DEFINITIONS) {
                     const def = FIELD_DEFINITIONS[name];
                     if (def.model_class_name === 'HVACDevice') {
@@ -252,7 +245,6 @@
                     }
                 }
 
-                // Add device-specific fields
                 if (selectedDeviceTypeKey && DEVICE_TYPE_MODEL_MAPPING[selectedDeviceTypeKey]) {
                     const modelNameToMatch = DEVICE_TYPE_MODEL_MAPPING[selectedDeviceTypeKey];
                     for (const name in FIELD_DEFINITIONS) {
@@ -269,8 +261,6 @@
                         }
                     }
                 } else if (!selectedDeviceTypeKey && purpose !== 'searchable_metric') { 
-                    // "Any" device type selected, show all displayable/groupable from all types
-                    // This can make the list very long.
                     for (const name in FIELD_DEFINITIONS) {
                         const def = FIELD_DEFINITIONS[name];
                         if ((purpose === 'displayable' && def.displayable) ||
@@ -285,7 +275,7 @@
 
 
                 if (purpose === 'groupable') {
-                    if (!seenNames.has('market_entry_year')) { // Add special grouping options
+                    if (!seenNames.has('market_entry_year')) { 
                         relevantFields.push(['market_entry_year', 'Market Entry Year']);
                     }
                 }
@@ -308,21 +298,9 @@
                 const groupOptions = getRelevantFields(selectedDeviceTypeKey, 'groupable');
                 populateSelectWithOptions(groupByFieldSelect, groupOptions, true);
                 
-                // const advFilterOptions = getRelevantFields(selectedDeviceTypeKey, 'displayable');
-                // populateSelectWithOptions(advFilterFieldSelect, advFilterOptions, true);
-                // if(advFilterFieldSelect && !Array.from(advFilterFieldSelect.options).some(opt => opt.value === 'custom')) {
-                //     const customOpt = document.createElement('option');
-                //     customOpt.value = 'custom';
-                //     customOpt.textContent = 'Custom Field...';
-                //     advFilterFieldSelect.appendChild(customOpt);
-                // }
             }
 
             if (deviceTypeSelect) {
-                // Initial population based on current selection (e.g., from GET params)
-                // The form fields (search_metric_name, etc.) are already populated with choices
-                // from Python for the "no device type selected" state.
-                // This JS update refines them if a device type IS selected on page load.
                 updateDynamicSelects(); 
                 deviceTypeSelect.addEventListener('change', updateDynamicSelects);
             }

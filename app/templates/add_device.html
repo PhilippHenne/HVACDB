@@ -5,23 +5,21 @@
 {% block styles %}
     {{ super() }}
     <style>
-        .form-field-wrapper { /* Changed from form-field-group for clarity */
-            display: none; /* Hidden by default, JS will show relevant ones */
-            padding: 5px 0; /* Reduced padding */
-            margin-bottom: 10px;
-            /* border-left: 3px solid transparent; */ /* Removed border for simplicity for now */
+        .form-field-wrapper {
+            display: none;
+            padding: 5px 0;
         }
-        .form-section { 
+        .form-section {
             background-color: #f8f9fa;
-            border: 1px solid #dee2e6; 
-            padding: 20px; 
-            margin-bottom: 20px; 
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin-bottom: 20px;
             border-radius: .25rem;
         }
-        .form-section h3 { 
-            margin-top: 0; 
-            border-bottom: 1px solid #ced4da; 
-            padding-bottom: 10px; 
+        .form-section h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #ced4da;
+            padding-bottom: 10px;
             margin-bottom:15px;
             font-size: 1.25rem;
         }
@@ -38,36 +36,39 @@
 
         <div class="form-section">
             <h3>Device Type</h3>
-            <div class="mb-3" id="form-group-device_type"> {# Always show device_type #}
+            <div class="mb-3" id="form-group-device_type">
                 {{ form.device_type.label(class="form-label") }}
                 {{ form.device_type(class="form-select", id="add_device_type_select") }}
                 {% if form.device_type.errors %}{% for error in form.device_type.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% endif %}
             </div>
         </div>
-        
-        {# All other fields will be rendered here and shown/hidden by JS #}
-        <div id="dynamic-fields-container">
-            {% for field in form %}
-                {% if field.widget.input_type != 'hidden' and field.name not in ['submit', 'device_type', 'csrf_token'] %}
-                    <div class="mb-3 form-field-wrapper" id="wrapper-{{ field.name }}" data-field-model-attr="{{ field.name }}">
-                        {{ field.label(class="form-label") }}
-                        {% if field.type == 'TextAreaField' %}
-                            {{ field(class="form-control", rows="3") }}
-                        {% elif field.type == 'SelectField' %}
-                            {{ field(class="form-select") }}
-                        {% else %}
-                            {{ field(class="form-control") }}
-                        {% endif %}
 
-                        {% if field.errors %}
-                            {% for error in field.errors %}
-                                <div class="invalid-feedback d-block">{{ error }}</div>
-                            {% endfor %}
-                        {% endif %}
-                        {% if field.description %} <small class="form-text text-muted">{{ field.description }}</small> {% endif %}
-                    </div>
-                {% endif %}
-            {% endfor %}
+        <div id="dynamic-fields-container" class="form-section">
+            <h3>Device Details</h3>
+            <div class="row"> {# Bootstrap row for responsive columns #}
+                {% for field in form %}
+                    {% if field.widget.input_type != 'hidden' and field.name not in ['submit', 'device_type', 'csrf_token'] %}
+                        {# Added mb-3 back to the col-12 col-md-4 div #}
+                        <div class="col-12 col-md-4 mb-3 form-field-wrapper" id="wrapper-{{ field.name }}" data-field-model-attr="{{ field.name }}">
+                            {{ field.label(class="form-label") }}
+                            {% if field.type == 'TextAreaField' %}
+                                {{ field(class="form-control", rows="3") }}
+                            {% elif field.type == 'SelectField' %}
+                                {{ field(class="form-select") }}
+                            {% else %}
+                                {{ field(class="form-control") }}
+                            {% endif %}
+
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                            {% if field.description %} <small class="form-text text-muted">{{ field.description }}</small> {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div> {# End of Bootstrap row #}
         </div>
 
         <div class="mt-4">
@@ -78,7 +79,7 @@
 {% endblock %}
 
 {% block scripts %}
-    {{ super() }} 
+    {{ super() }}
     <script>
         const FIELD_DEFINITIONS_ADD = JSON.parse('{{ field_definitions_json | safe }}');
         const DEVICE_TYPE_MODEL_MAPPING_ADD = JSON.parse('{{ device_type_model_mapping_json | safe }}');
@@ -86,7 +87,7 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             const deviceTypeSelect = document.getElementById('add_device_type_select');
-            const allFieldWrappers = document.querySelectorAll('.form-field-wrapper');
+            const allFieldWrappers = document.querySelectorAll('#dynamic-fields-container .form-field-wrapper');
 
             console.log("FIELD_DEFINITIONS_ADD:", FIELD_DEFINITIONS_ADD);
             console.log("DEVICE_TYPE_MODEL_MAPPING_ADD:", DEVICE_TYPE_MODEL_MAPPING_ADD);
@@ -124,26 +125,22 @@
                         // Show if it's a common field (belongs to HVACDevice)
                         if (fieldDef.model_class_name === 'HVACDevice') {
                             showField = true;
-                        } 
+                        }
                         // Show if it's specific to the selected device type
                         else if (fieldDef.model_class_name === selectedModelClassName) {
                             showField = true;
                         }
-                        // console.log(`Field: ${fieldModelAttr}, Def Class: ${fieldDef.model_class_name}, Show: ${showField}`);
                     } else {
-                        // If a form field exists but has no definition, hide it by default, or decide on other behavior.
-                        // This might happen if HVACDeviceForm has fields not in FIELD_DEFINITIONS.
                         console.warn(`No field definition found for form field: ${fieldModelAttr}. Hiding by default.`);
-                        showField = false; 
+                        showField = false;
                     }
+                    // When showing the field, ensure its display is block so Bootstrap columns work
                     wrapper.style.display = showField ? 'block' : 'none';
                 });
             }
 
             if (deviceTypeSelect) {
-                // Ensure the initial state is set correctly based on any pre-selected value
-                // (e.g., if form is re-rendered after validation error with a type selected)
-                updateVisibleFields(); 
+                updateVisibleFields();
                 deviceTypeSelect.addEventListener('change', updateVisibleFields);
             } else {
                 console.error("Device type select ('add_device_type_select') not found.");

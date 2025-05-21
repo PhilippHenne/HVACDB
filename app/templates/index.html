@@ -5,7 +5,7 @@
 {% block content %}
 <div class="jumbotron">
     <h1 class="display-4">HVAC Efficiency Database</h1>
-    <p class="lead">Analyze HVAC devices for their energy efficiency and track development over the past decade.</p>
+    <p class="lead">Analyse HVAC devices for their energy efficiency and track development over the past decade.</p>
     <hr class="my-4">
     <p>This database helps predict future developments and assess potential for energy efficiency improvements in HVAC systems.</p>
     
@@ -37,6 +37,16 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">TCO Calculator</h5>
+                    <p class="card-text">Calculate TCO for a specific heat pump.</p>
+                    <a href="{{ url_for('main.tco_calculator') }}" class="btn btn-primary">TCO Calculator</a>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}

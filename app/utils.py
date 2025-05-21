@@ -2,12 +2,11 @@
 import os
 import pandas as pd
 from werkzeug.utils import secure_filename
-# Updated import: Removed HeatPumpPerformance
 from .models import db, HVACDevice, MODEL_MAP, AirConditioner, ResidentialVentilationUnit, HeatPump 
 import math 
 from datetime import date
 import re
-from flask import current_app # For logging
+from flask import current_app
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'csv'}
@@ -31,12 +30,12 @@ def safe_date_convert(value):
         return None
 
 def get_row_value(row, col_name, data_type='string'):
-    value = row.get(col_name) # col_name should be the cleaned CSV column name
+    value = row.get(col_name)
     if pd.isna(value) or (isinstance(value, str) and value.strip() == ''):
         return None
     try:
         if data_type == 'float':
-            return float(str(value).replace(',', '.')) # Handle comma decimal separator
+            return float(str(value).replace(',', '.'))
         elif data_type == 'int':
             return safe_int_convert(str(value).replace(',', '.'))
         elif data_type == 'string':
@@ -50,10 +49,6 @@ def get_row_value(row, col_name, data_type='string'):
         return None
 
 def process_csv(file_path, target_device_type_str):
-    """
-    Process CSV for a specific device type using inheritance models.
-    Handles Heat Pumps with a unified CSV structure.
-    """
     ModelClass = MODEL_MAP.get(target_device_type_str)
     if not ModelClass:
         return False, f"Invalid target device type '{target_device_type_str}' provided for CSV processing."
@@ -62,29 +57,22 @@ def process_csv(file_path, target_device_type_str):
         na_values_list = ['NULL', 'Null', 'null', '', '#N/A', 'N/A', 'NA', 'NaN', 'None', 'nan', 'none', 'undefined', 'Invalid date', '-']
         df = pd.read_csv(file_path, low_memory=False, na_values=na_values_list, keep_default_na=True, encoding='utf-8', skipinitialspace=True)
         
-        # Standardize CSV column names for consistent access
-        # This should match the naming convention used in your reduce_hp.py output for heat pumps
-        # and how you expect other CSVs (AC, RVU) to be named.
         original_cols = df.columns.tolist()
         df.columns = [
             str(col).strip().lower().replace(' ', '_').replace('-', '_').replace('/', '_').replace('.', '_dot_').replace('(', '_lp_').replace(')', '_rp_')
             for col in original_cols
         ]
-        # Further consolidate multiple underscores and strip leading/trailing ones
         df.columns = [re.sub(r'_+', '_', col).strip('_') for col in df.columns]
         current_app.logger.debug(f"CSV columns after standardization for import ({target_device_type_str}): {df.columns.tolist()}")
 
         success_count = 0
         error_count = 0
-        errors_list = [] # Renamed from errors to avoid conflict
+        errors_list = []
 
         for index, row in df.iterrows():
             try:
-                # --- Common Data Extraction ---
-                # Ensure your CSVs consistently have 'manufacturer' and 'model_identifier' columns,
-                # or map them from CSV specific names (e.g., 'participant_name' -> 'manufacturer')
-                manufacturer_val = get_row_value(row, 'manufacturer', 'string') # Assumes 'manufacturer' column
-                model_identifier_val = get_row_value(row, 'model_identifier', 'string') # Assumes 'model_identifier'
+                manufacturer_val = get_row_value(row, 'manufacturer', 'string')
+                model_identifier_val = get_row_value(row, 'model_identifier', 'string')
 
                 if not manufacturer_val: 
                     raise ValueError(f"Row {index+2}: 'manufacturer' is missing or invalid.")
@@ -96,7 +84,7 @@ def process_csv(file_path, target_device_type_str):
                     'model_identifier': model_identifier_val,
                     'market_entry': get_row_value(row, 'market_entry', 'date'),
                     'market_exit': get_row_value(row, 'market_exit', 'date'),
-                    'noise_level_dba': get_row_value(row, 'noise_level_dba', 'float'), # General noise
+                    'noise_level_dba': get_row_value(row, 'noise_level_dba', 'float'),
                     'price_currency': get_row_value(row, 'price_currency', 'string'),
                     'price_amount': get_row_value(row, 'price_amount', 'float'),
                     'data_source': get_row_value(row, 'data_source', 'string'),
@@ -104,11 +92,9 @@ def process_csv(file_path, target_device_type_str):
                 }
 
                 specific_data = {}
-                current_fields_map = {} # To hold the map for the current device type
+                current_fields_map = {}
                 if target_device_type_str == 'air_conditioner':
-                    # Define expected fields for AirConditioner (use lowercase snake_case)
                     ac_fields_map = {
-                        # Field Name in Model: (Column Name in CSV, Data Type)
                         'eer': ('eer', 'float'),
                         'seer': ('seer', 'float'),
                         'rated_power_cooling_kw': ('rated_power_cooling_kw', 'float'),
@@ -165,16 +151,13 @@ def process_csv(file_path, target_device_type_str):
                         'noise_level_indoor_heating_db': ('noise_level_indoor_heating_db', 'float'), 
                         'capacity_control_type': ('capacity_control_type', 'string'), 
                         'degradation_coeff_cooling_cd': ('degradation_coeff_cooling_cd', 'float'), 
-                        # 'data_source' field removed from specific map, handled in common_data
                     }
 
                     for model_field, (csv_col, dtype) in ac_fields_map.items():
-                        # Use standardized csv_col name for lookup
                         specific_data[model_field] = get_row_value(row, csv_col.lower(), dtype)
 
 
                 elif target_device_type_str == 'residential_ventilation_unit':
-                    # Define expected fields for RVU (use lowercase snake_case)
                     rvu_fields_map = {
                         'maximumflowrate': ('maximumflowrate', 'float'),
                         'referenceflowrate': ('referenceflowrate', 'float'),
@@ -198,20 +181,17 @@ def process_csv(file_path, target_device_type_str):
                         'maximumexternalleakagerate': ('maximumexternalleakagerate', 'float'),
                     }
                 elif target_device_type_str == 'heat_pump':
-                    # This map MUST match your HeatPump model attributes and the
-                    # column names from your heatpumps_unified_for_import.csv
                     current_fields_map = {
-                        # Base HP characteristics
                         'trade_name': ('trade_name', 'string'),
                         'model_type': ('model_type', 'string'),
                         'software_name': ('software_name', 'string'),
                         'software_version': ('software_version', 'string'),
-                        'refrigerant': ('refrigerant', 'string'), # HP specific refrigerant
+                        'refrigerant': ('refrigerant', 'string'), 
                         'main_power_supply': ('main_power_supply', 'string'),
                         'control_of_pump_speed': ('control_of_pump_speed', 'string'),
                         'reversibility_on_water_side': ('reversibility_on_water_side', 'string'),
                         'simultaneous_heating': ('simultaneous_heating', 'string'),
-                        'esp_duct': ('esp_duct', 'string'), # Or float if always numeric
+                        'esp_duct': ('esp_duct', 'string'),
                         'outdoor_heat_exchanger_type': ('outdoor_heat_exchanger_type', 'string'),
                         'indoor_heat_exchanger_type': ('indoor_heat_exchanger_type', 'string'),
                         'expansion_valve_type': ('expansion_valve_type', 'string'),
@@ -248,35 +228,25 @@ def process_csv(file_path, target_device_type_str):
                     }
 
                 for model_field, (csv_col, dtype) in current_fields_map.items():
-                    # Ensure csv_col matches the cleaned column name style from df.columns
                     cleaned_csv_col_for_lookup = csv_col.strip().lower().replace(' ', '_').replace('-', '_').replace('/', '_').replace('.', '_dot_').replace('(', '_lp_').replace(')', '_rp_')
                     cleaned_csv_col_for_lookup = re.sub(r'_+', '_', cleaned_csv_col_for_lookup).strip('_')
                     specific_data[model_field] = get_row_value(row, cleaned_csv_col_for_lookup, dtype)
                 
-                # --- Custom fields logic ---
-                # Identify columns in the CSV that are not part of common_data or the specific_data map for this type
                 model_attribute_names = set(common_data.keys()) | set(specific_data.keys())
                 
-                # For custom fields, we need to compare against the *model attribute names* that these CSV columns map to.
-                # The current `all_known_direct_cols` approach might be slightly off if CSV names differ from model names.
-                # A safer way: create a set of all CSV column names that have been explicitly mapped.
                 mapped_csv_cols = set()
-                # Add CSV columns used for common_data (assuming direct name match after cleaning)
                 for common_key in common_data.keys():
-                    # This assumes common_data keys are already cleaned like CSV columns
                     mapped_csv_cols.add(common_key) 
-                # Add CSV columns used for specific_data
                 for model_attr, (csv_col, _) in current_fields_map.items():
                      cleaned_csv_col_for_lookup = csv_col.strip().lower().replace(' ', '_').replace('-', '_').replace('/', '_').replace('.', '_dot_').replace('(', '_lp_').replace(')', '_rp_')
                      cleaned_csv_col_for_lookup = re.sub(r'_+', '_', cleaned_csv_col_for_lookup).strip('_')
                      mapped_csv_cols.add(cleaned_csv_col_for_lookup)
 
                 custom_data = {}
-                for csv_col_in_df in df.columns: # Iterate over actual (cleaned) columns in DataFrame
+                for csv_col_in_df in df.columns:
                     if csv_col_in_df not in mapped_csv_cols:
-                        value = row.get(csv_col_in_df) # get_row_value could also be used here with 'string'
+                        value = row.get(csv_col_in_df) 
                         if pd.notna(value) and str(value).strip() != '':
-                            # Basic serialization for JSON
                             if isinstance(value, (bool, int, float, str)): custom_data[csv_col_in_df] = value
                             elif isinstance(value, date): custom_data[csv_col_in_df] = value.isoformat()
                             else:
@@ -287,13 +257,13 @@ def process_csv(file_path, target_device_type_str):
                 
                 device = ModelClass(**common_data, **specific_data)
                 db.session.add(device)
-                db.session.commit() # Commit per row
+                db.session.commit()
                 success_count += 1
 
-            except ValueError as e: # Catch specific ValueErrors for required fields
+            except ValueError as e: 
                 db.session.rollback()
                 error_count += 1
-                errors_list.append(str(e)) # e.g., "Row X: manufacturer is missing"
+                errors_list.append(str(e))
                 current_app.logger.warning(f"CSV Import ValueError: {e}")
             except Exception as e:
                 db.session.rollback()
@@ -308,30 +278,23 @@ def process_csv(file_path, target_device_type_str):
             message = f"Import for {ModelClass.__name__} finished. Committed: {success_count}, Rows with errors: {error_count}."
         elif success_count == 0 and error_count > 0:
             message = f"Import for {ModelClass.__name__} failed. No devices committed. Rows with errors: {error_count}."
-        elif success_count == 0 and error_count == 0: # No rows in CSV or all rows empty
+        elif success_count == 0 and error_count == 0:
              message = f"No data rows found or processed in the CSV for {ModelClass.__name__}."
-        else: # Should not happen
+        else:
             message = f"Import for {ModelClass.__name__} completed."
         
         if errors_list:
             message += f" First few errors: {'; '.join(errors_list[:3])}{'...' if len(errors_list) > 3 else ''}"
         
-        return success_count > 0 or (success_count == 0 and error_count == 0 and len(df) == 0) , message # Success if some imported or if file was empty
-
+        return success_count > 0 or (success_count == 0 and error_count == 0 and len(df) == 0) , message
+    
     except pd.errors.EmptyDataError:
-         return True, f"CSV file for '{ModelClass.__name__}' is empty. No data imported." # Consider empty file not an error
+         return True, f"CSV file for '{ModelClass.__name__}' is empty. No data imported."
     except KeyError as e:
-         db.session.rollback() # Should not be needed if using .get() for rows
+         db.session.rollback()
          current_app.logger.error(f"CSV Import KeyError: Type {target_device_type_str}, Missing column {e}", exc_info=True)
          return False, f"Error processing CSV for {ModelClass.__name__}: A critical column is missing or named incorrectly. Details: Missing column {e}"
     except Exception as e:
          db.session.rollback()
          current_app.logger.error(f"General CSV Processing Error: Type {target_device_type_str}, Error: {e}", exc_info=True)
          return False, f"Unexpected error reading/processing CSV for {ModelClass.__name__}: {type(e).__name__} - {str(e)}"
-
-# REMOVE process_heat_pump_csvs function - it's no longer used
-# def process_heat_pump_csvs(base_file_path, performance_file_path):
-#    # ... (all its contents deleted) ...
-#    pass
-
-

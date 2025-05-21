@@ -12,14 +12,14 @@
             background-color: #f8f9fa;
         }
         body {
-            padding-top: 20px; /* Adjust if navbar is fixed, but for static navbar this is fine */
+            padding-top: 20px;
             padding-bottom: 20px;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
         }
-        .main-container { /* Renamed from .container to avoid conflict with Bootstrap's .container */
-            flex: 1; /* Allows main content to grow and push footer down */
+        .main-container { 
+            flex: 1;
         }
     </style>
     {% block styles %}{% endblock %}
@@ -65,16 +65,13 @@
             {% endif %}
         {% endwith %}
         
-        {# Content block is now outside the Bootstrap .container of the nav, but likely within a new .container or .main-content div #}
-        {# The structure you had: <div class="content"> {% block content %}{% endblock %} </div> #}
-        {# Let's assume .content is styled appropriately or we use Bootstrap containers in child templates #}
         <div class="content">
             {% block content %}{% endblock %}
         </div>
         
-    </div> {# End of main .container #}
+    </div>
 
-    <footer class="footer mt-auto py-3 bg-light"> {# Bootstrap sticky footer classes #}
+    <footer class="footer mt-auto py-3 bg-light">
         <div class="container text-center">
             <span class="text-muted">HVAC Efficiency Database &copy; {{ now.year }}</span>
         </div>

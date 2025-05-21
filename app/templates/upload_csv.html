@@ -97,36 +97,9 @@
                     <li>refrigerant_gwp</li>
                     <li>noise_level_outdoor_cooling_db</li>
                 </ul>
-                {# Sample CSV generation JS needs significant update or removal #}
-                {# <a href="#" class="btn btn-outline-secondary btn-sm" id="download-sample">Download Sample CSV</a> #}
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{# Remove or update the sample CSV script if it exists #}
-{% block scripts %}
-{# <script>
-    document.getElementById('download-sample').addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        // Create sample CSV content
-        const csvContent = `manufacturer,market_entry,device_type,power_rating_kw,airflow_volume_m3h,eer,seer,sepr,heat_recovery_rate,fan_performance,temperature_range,noise_level_dba,price_currency,price_amount,units_sold_year,units_sold_count,data_source
-Carrier,2020,Heat Pump,5.5,1200,3.6,18.5,3.2,95,92,"10-32",45,USD,3500,2020,1250,Manufacturer
-Daikin,2019,AC Unit,3.2,850,3.8,17.2,3.0,92,88,"15-35",42,EUR,2800,2019,2100,Industry Report
-Trane,2021,Ventilation,2.8,1500,3.5,16.8,3.1,90,91,"12-30",47,USD,4200,2021,980,Survey Data`;
-        
-        // Create a Blob and download link
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.setAttribute('hidden', '');
-        a.setAttribute('href', url);
-        a.setAttribute('download', 'sample_hvac_data.csv');
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    });
-</script> #}
-{% endblock %}
